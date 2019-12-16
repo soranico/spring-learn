@@ -63,7 +63,15 @@ public class AnnotationConfigApplicationContext extends GenericApplicationContex
 	 * through {@link #register} calls and then manually {@linkplain #refresh refreshed}.
 	 */
 	public AnnotationConfigApplicationContext() {
+		/**
+		 * 在spring环境中注册一个bdreader
+		 * 她可以将一个普通类，注册成为一个
+		 * BeanDefinition{@link org.springframework.beans.factory.config.BeanDefinition}
+		 */
 		this.reader = new AnnotatedBeanDefinitionReader(this);
+		/**
+		 * 扫描注册的bd，或者类，将其转化为bd
+		 */
 		this.scanner = new ClassPathBeanDefinitionScanner(this);
 	}
 
@@ -84,6 +92,11 @@ public class AnnotationConfigApplicationContext extends GenericApplicationContex
 	 * {@link Configuration @Configuration} classes
 	 */
 	public AnnotationConfigApplicationContext(Class<?>... componentClasses) {
+		/**
+		 * AnnotationConfigApplicationContext继承了{@link GenericApplicationContext}
+		 * 所以在初始化spring环境的时候会先去调用父类的构造方法
+		 * {@link GenericApplicationContext#GenericApplicationContext()}
+		 */
 		this();
 		register(componentClasses);
 		refresh();

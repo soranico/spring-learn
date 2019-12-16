@@ -109,6 +109,10 @@ public class GenericApplicationContext extends AbstractApplicationContext implem
 	 * @see #refresh
 	 */
 	public GenericApplicationContext() {
+		/**
+		 * 在调用父类的构造方法的时候，初始化了
+		 * spring的工厂{@link DefaultListableBeanFactory#DefaultListableBeanFactory()}
+		 */
 		this.beanFactory = new DefaultListableBeanFactory();
 	}
 
