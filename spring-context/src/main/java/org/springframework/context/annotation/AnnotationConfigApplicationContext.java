@@ -16,8 +16,6 @@
 
 package org.springframework.context.annotation;
 
-import java.util.function.Supplier;
-
 import org.springframework.beans.factory.config.BeanDefinitionCustomizer;
 import org.springframework.beans.factory.support.BeanNameGenerator;
 import org.springframework.beans.factory.support.DefaultListableBeanFactory;
@@ -25,6 +23,8 @@ import org.springframework.context.support.GenericApplicationContext;
 import org.springframework.core.env.ConfigurableEnvironment;
 import org.springframework.lang.Nullable;
 import org.springframework.util.Assert;
+
+import java.util.function.Supplier;
 
 /**
  * Standalone application context, accepting <em>component classes</em> as input &mdash;
@@ -67,6 +67,8 @@ public class AnnotationConfigApplicationContext extends GenericApplicationContex
 		 * 在spring环境中注册一个bdreader
 		 * 她可以将一个普通类，注册成为一个
 		 * BeanDefinition{@link org.springframework.beans.factory.config.BeanDefinition}
+		 * 注册bdreader的时候，传递this（spring环境），因此{@link org.springframework.beans.factory.support.BeanDefinitionRegistry}
+		 * 也是spring的环境，因为AnnotationConfigApplicationContext的父类{@link GenericApplicationContext}继承了BeanDefinitionRegistry
 		 */
 		this.reader = new AnnotatedBeanDefinitionReader(this);
 		/**
