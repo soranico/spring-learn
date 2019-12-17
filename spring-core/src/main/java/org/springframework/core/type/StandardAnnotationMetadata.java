@@ -16,16 +16,17 @@
 
 package org.springframework.core.type;
 
+import org.springframework.core.annotation.AnnotatedElementUtils;
+import org.springframework.lang.Nullable;
+import org.springframework.util.MultiValueMap;
+
 import java.lang.annotation.Annotation;
+import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Method;
 import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
-
-import org.springframework.core.annotation.AnnotatedElementUtils;
-import org.springframework.lang.Nullable;
-import org.springframework.util.MultiValueMap;
 
 /**
  * {@link AnnotationMetadata} implementation that uses standard reflection
@@ -103,9 +104,23 @@ public class StandardAnnotationMetadata extends StandardClassMetadata implements
 		return (this.annotations.length > 0 &&
 				AnnotatedElementUtils.hasMetaAnnotationTypes(getIntrospectedClass(), annotationName));
 	}
-
+	/**
+	 * @param annotationName：注解的名字
+	 * @return  当前Class是否加了该注解
+	 * @description 判断当前类是否被加了注解
+	 * @author soranico
+	 * @date 2019/12/17
+	 * @version 1.0
+	 */
 	@Override
 	public boolean isAnnotated(String annotationName) {
+		/**
+		 * 返回当前类是否被加了名
+		 * 为annotationName的注解
+		 * 1.如果注解为0，则返回false
+		 * 2.注解不为0，调用{@link AnnotatedElementUtils#isAnnotated(AnnotatedElement, String)}
+		 * 判断当前Class是否加了该注解
+		 */
 		return (this.annotations.length > 0 &&
 				AnnotatedElementUtils.isAnnotated(getIntrospectedClass(), annotationName));
 	}

@@ -16,12 +16,12 @@
 
 package org.springframework.context.annotation;
 
-import java.lang.annotation.Annotation;
-
 import org.springframework.beans.factory.annotation.AnnotatedBeanDefinition;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.core.annotation.AnnotationAttributes;
 import org.springframework.util.Assert;
+
+import java.lang.annotation.Annotation;
 
 /**
  * A {@link ScopeMetadataResolver} implementation that by default checks for
@@ -73,12 +73,26 @@ public class AnnotationScopeMetadataResolver implements ScopeMetadataResolver {
 		this.scopeAnnotationType = scopeAnnotationType;
 	}
 
-
+	/**
+	 * @param definition：描述spring的bean的bd
+	 * @return bean的模式：singleton和prototype
+	 * @description 根据bd得到spring的bean的模式
+	 * @author soranico
+	 * @date 2019/12/17
+	 * @version 1.0
+	 */
 	@Override
 	public ScopeMetadata resolveScopeMetadata(BeanDefinition definition) {
+		/** 默认单例 */
 		ScopeMetadata metadata = new ScopeMetadata();
 		if (definition instanceof AnnotatedBeanDefinition) {
 			AnnotatedBeanDefinition annDef = (AnnotatedBeanDefinition) definition;
+			/**
+			 * 通过类型获取bd是否加了@scope注解
+			 * 如果有注解，则获取对应的信息
+			 * 封装成为ScopeMetadata返回
+			 * AnnotationAttributes：本质就是一个map格式
+			 */
 			AnnotationAttributes attributes = AnnotationConfigUtils.attributesFor(
 					annDef.getMetadata(), this.scopeAnnotationType);
 			if (attributes != null) {

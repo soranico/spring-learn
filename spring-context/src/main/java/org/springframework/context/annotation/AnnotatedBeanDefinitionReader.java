@@ -90,7 +90,10 @@ public class AnnotatedBeanDefinitionReader {
 		Assert.notNull(environment, "Environment must not be null");
 		this.registry = registry;
 		/**
-		 * 暂时不知道做什么
+		 * 通过doRegisterBean()得知，此方法的作用是添加不要注册的类，不知是否正确？
+		 * //TODO
+		 * {@link #doRegisterBean(Class, Supplier, String, Class[], BeanDefinitionCustomizer...)}
+		 *
 		 */
 		this.conditionEvaluator = new ConditionEvaluator(registry, environment, null);
 		/**
@@ -146,6 +149,10 @@ public class AnnotatedBeanDefinitionReader {
 	 *                         e.g. {@link Configuration @Configuration} classes
 	 */
 	public void register(Class<?>... componentClasses) {
+		/**
+		 * 循环将每个类注册为bd，委托调用registerBean()
+		 * {@link #registerBean(Class)}
+		 */
 		for (Class<?> componentClass : componentClasses) {
 			registerBean(componentClass);
 		}
@@ -154,10 +161,14 @@ public class AnnotatedBeanDefinitionReader {
 	/**
 	 * Register a bean from the given bean class, deriving its metadata from
 	 * class-declared annotations.
-	 *
+	 * 此方法将Java的类注册为一个bd
 	 * @param beanClass the class of the bean
 	 */
 	public void registerBean(Class<?> beanClass) {
+		/**
+		 * 委托调用doRegisterBean()
+		 * {@link #doRegisterBean(Class, Supplier, String, Class[], BeanDefinitionCustomizer...)}
+		 */
 		doRegisterBean(beanClass, null, null, null);
 	}
 
@@ -220,7 +231,7 @@ public class AnnotatedBeanDefinitionReader {
 	/**
 	 * Register a bean from the given bean class, deriving its metadata from
 	 * class-declared annotations.
-	 *
+	 * 此方法完成将一个Class注册成为BeanDefinition
 	 * @param beanClass             the class of the bean
 	 * @param instanceSupplier      a callback for creating an instance of the bean
 	 *                              (may be {@code null})
@@ -233,15 +244,36 @@ public class AnnotatedBeanDefinitionReader {
 	 */
 	<T> void doRegisterBean(Class<T> beanClass, @Nullable Supplier<T> instanceSupplier, @Nullable String name,
 							@Nullable Class<? extends Annotation>[] qualifiers, BeanDefinitionCustomizer... definitionCustomizers) {
-
+		/**
+		 * 1.通过AnnotatedGenericBeanDefinition将一个加了注解的Class注册为bd
+		 * AnnotatedGenericBeanDefinition继承了BeanDefinition，用于描述
+		 * 加了注解的Class，{@link AnnotatedGenericBeanDefinition}
+		 *
+		 * 2.RootBeanDefinition用于描述spring内部的类
+		 * {@link org.springframework.beans.factory.support.RootBeanDefinition}
+		 */
 		AnnotatedGenericBeanDefinition abd = new AnnotatedGenericBeanDefinition(beanClass);
+
+		/**
+		 * 是否应该跳过注册
+		 * conditionEvaluator是在spring环境初始化时
+		 * 创建AnnotatedBeanDefinitionReader实例，然后调用
+		 * {@link #AnnotatedBeanDefinitionReader(BeanDefinitionRegistry)}
+		 * 通过一系列调用链，最终在{@link #AnnotatedBeanDefinitionReader(BeanDefinitionRegistry, Environment)}
+		 * 里实例化的
+		 */
 		if (this.conditionEvaluator.shouldSkip(abd.getMetadata())) {
 			return;
 		}
 
 		abd.setInstanceSupplier(instanceSupplier);
+		/** 设置bean模式，singleton还是prototype */
 		ScopeMetadata scopeMetadata = this.scopeMetadataResolver.resolveScopeMetadata(abd);
 		abd.setScope(scopeMetadata.getScopeName());
+		/**
+		 * 生成bean的名字
+		 * 通过实现{@link BeanNameGenerator}可以自定义bean的name
+		 */
 		String beanName = (name != null ? name : this.beanNameGenerator.generateBeanName(abd, this.registry));
 
 		AnnotationConfigUtils.processCommonDefinitionAnnotations(abd);

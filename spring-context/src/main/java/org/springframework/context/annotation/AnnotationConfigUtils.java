@@ -201,7 +201,12 @@ public abstract class AnnotationConfigUtils {
 			def.setSource(source);
 			beanDefs.add(registerPostProcessor(registry, def, CONFIGURATION_ANNOTATION_PROCESSOR_BEAN_NAME));
 		}
-
+		/**
+		 * 下面几个类都继承了BeanPostProcessor
+		 * {@link org.springframework.beans.factory.config.BeanPostProcessor}
+		 * 而BeanPostProcessor可以插手spring的bean的创建
+		 * 因此，当我们写的类继承BeanPostProcessor时也可以插手spring的bean的创建
+		 */
 		if (!registry.containsBeanDefinition(AUTOWIRED_ANNOTATION_PROCESSOR_BEAN_NAME)) {
 			RootBeanDefinition def = new RootBeanDefinition(AutowiredAnnotationBeanPostProcessor.class);
 			def.setSource(source);

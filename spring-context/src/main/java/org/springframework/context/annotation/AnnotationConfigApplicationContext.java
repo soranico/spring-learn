@@ -100,6 +100,10 @@ public class AnnotationConfigApplicationContext extends GenericApplicationContex
 		 * {@link GenericApplicationContext#GenericApplicationContext()}
 		 */
 		this();
+		/**
+		 * 读取类将其注册为BeanDefinition
+		 * {@link #register(Class[])}
+		 */
 		register(componentClasses);
 		refresh();
 	}
@@ -172,6 +176,10 @@ public class AnnotationConfigApplicationContext extends GenericApplicationContex
 	@Override
 	public void register(Class<?>... componentClasses) {
 		Assert.notEmpty(componentClasses, "At least one component class must be specified");
+		/**
+		 * 通过调用AnnotatedBeanDefinitionReader的register()将一个类注册为bd
+		 * {@link AnnotatedBeanDefinitionReader#register(Class[])}
+		 */
 		this.reader.register(componentClasses);
 	}
 
