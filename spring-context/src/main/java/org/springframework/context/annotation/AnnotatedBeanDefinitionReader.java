@@ -16,6 +16,7 @@
 
 package org.springframework.context.annotation;
 
+import org.springframework.beans.factory.annotation.AnnotatedBeanDefinition;
 import org.springframework.beans.factory.annotation.AnnotatedGenericBeanDefinition;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.beans.factory.config.BeanDefinitionCustomizer;
@@ -27,6 +28,8 @@ import org.springframework.beans.factory.support.BeanNameGenerator;
 import org.springframework.core.env.Environment;
 import org.springframework.core.env.EnvironmentCapable;
 import org.springframework.core.env.StandardEnvironment;
+import org.springframework.core.io.ResourceLoader;
+import org.springframework.core.type.AnnotatedTypeMetadata;
 import org.springframework.lang.Nullable;
 import org.springframework.util.Assert;
 
@@ -71,6 +74,8 @@ public class AnnotatedBeanDefinitionReader {
 	public AnnotatedBeanDefinitionReader(BeanDefinitionRegistry registry) {
 		/**
 		 * 调用对应的构造方法{@link #AnnotatedBeanDefinitionReader(BeanDefinitionRegistry, Environment)}
+		 * getOrCreateEnvironment()：获取或创建一个spring环境（创建默认为非web环境）
+		 * {@link #getOrCreateEnvironment(BeanDefinitionRegistry)}
 		 */
 		this(registry, getOrCreateEnvironment(registry));
 	}
@@ -88,16 +93,23 @@ public class AnnotatedBeanDefinitionReader {
 	public AnnotatedBeanDefinitionReader(BeanDefinitionRegistry registry, Environment environment) {
 		Assert.notNull(registry, "BeanDefinitionRegistry must not be null");
 		Assert.notNull(environment, "Environment must not be null");
+		/**
+		 * 设置AnnotatedBeanDefinitionReader的环境为传递的环境
+		 * 暂时不知道为什么要在这里存储
+		 * TODO
+		 */
 		this.registry = registry;
 		/**
 		 * 通过doRegisterBean()得知，此方法的作用是添加不要注册的类，不知是否正确？
-		 * //TODO
 		 * {@link #doRegisterBean(Class, Supplier, String, Class[], BeanDefinitionCustomizer...)}
-		 *
+		 * //TODO
+		 * 1.现在的理解，2019.12.21（待验证）
+		 * 初始化bean条件解析器，用于后序解析条件注册bean
+		 * {@link ConditionEvaluator#ConditionEvaluator(BeanDefinitionRegistry, Environment, ResourceLoader)}
 		 */
 		this.conditionEvaluator = new ConditionEvaluator(registry, environment, null);
 		/**
-		 * 方法功能如其名，注册注解配置处理器，传递当前spring环境
+		 * registerAnnotationConfigProcessors：注册注解配置处理器，传递当前spring环境
 		 * {@link AnnotationConfigUtils#registerAnnotationConfigProcessors(BeanDefinitionRegistry)}
 		 */
 		AnnotationConfigUtils.registerAnnotationConfigProcessors(this.registry);
@@ -162,6 +174,7 @@ public class AnnotatedBeanDefinitionReader {
 	 * Register a bean from the given bean class, deriving its metadata from
 	 * class-declared annotations.
 	 * 此方法将Java的类注册为一个bd
+	 *
 	 * @param beanClass the class of the bean
 	 */
 	public void registerBean(Class<?> beanClass) {
@@ -232,6 +245,7 @@ public class AnnotatedBeanDefinitionReader {
 	 * Register a bean from the given bean class, deriving its metadata from
 	 * class-declared annotations.
 	 * 此方法完成将一个Class注册成为BeanDefinition
+	 *
 	 * @param beanClass             the class of the bean
 	 * @param instanceSupplier      a callback for creating an instance of the bean
 	 *                              (may be {@code null})
@@ -261,11 +275,17 @@ public class AnnotatedBeanDefinitionReader {
 		 * {@link #AnnotatedBeanDefinitionReader(BeanDefinitionRegistry)}
 		 * 通过一系列调用链，最终在{@link #AnnotatedBeanDefinitionReader(BeanDefinitionRegistry, Environment)}
 		 * 里实例化的
+		 * {@link org.springframework.context.annotation.ConditionEvaluator.ConditionContextImpl#shouldSkip(AnnotatedTypeMetadata)}
 		 */
 		if (this.conditionEvaluator.shouldSkip(abd.getMetadata())) {
 			return;
 		}
-
+		/**
+		 * 为bean的实例化作为生命回调
+		 * 替换默认的声明式工厂
+		 * 不知是否正确？
+		 * //TODO
+		 */
 		abd.setInstanceSupplier(instanceSupplier);
 		/** 设置bean模式，singleton还是prototype */
 		ScopeMetadata scopeMetadata = this.scopeMetadataResolver.resolveScopeMetadata(abd);
@@ -275,8 +295,17 @@ public class AnnotatedBeanDefinitionReader {
 		 * 通过实现{@link BeanNameGenerator}可以自定义bean的name
 		 */
 		String beanName = (name != null ? name : this.beanNameGenerator.generateBeanName(abd, this.registry));
-
+		/**
+		 * 初始化bean的属性，判断bean是否加了下面的注解
+		 * 如果有下面的注解，则初始化对应属性
+		 * lazy，Primary，Role，Description
+		 * {@link AnnotationConfigUtils#processCommonDefinitionAnnotations(AnnotatedBeanDefinition)}
+		 */
 		AnnotationConfigUtils.processCommonDefinitionAnnotations(abd);
+		/**
+		 * 判断传来参数中是否有继承Primary，Lazy的注解
+		 * 如果有，则设置当前BeanDefinition为Primary和Lazy
+		 */
 		if (qualifiers != null) {
 			for (Class<? extends Annotation> qualifier : qualifiers) {
 				if (Primary.class == qualifier) {
@@ -293,7 +322,14 @@ public class AnnotatedBeanDefinitionReader {
 		}
 
 		BeanDefinitionHolder definitionHolder = new BeanDefinitionHolder(abd, beanName);
+		/**
+		 * 暂时不知道
+		 * TODO
+		 */
 		definitionHolder = AnnotationConfigUtils.applyScopedProxyMode(scopeMetadata, definitionHolder, this.registry);
+		/**
+		 * 向spring的工厂里注册一个bd
+		 */
 		BeanDefinitionReaderUtils.registerBeanDefinition(definitionHolder, this.registry);
 	}
 
@@ -301,15 +337,17 @@ public class AnnotatedBeanDefinitionReader {
 	/**
 	 * Get the Environment from the given registry if possible, otherwise return a new
 	 * StandardEnvironment.
+	 * 获取spring的上下文环境
 	 */
 	private static Environment getOrCreateEnvironment(BeanDefinitionRegistry registry) {
 		Assert.notNull(registry, "BeanDefinitionRegistry must not be null");
 		/**
 		 * 根据spring上下文的类型返回对应的环境，常用的有
 		 * {@link org.springframework.web.context.support.StandardServletEnvironment}（web环境）
-		 * {@link StandardEnvironment}（非尾巴环境）
-		 * 如果当前上下文没有实现EnvironmentCapable接口的话
+		 * {@link StandardEnvironment}（非web环境）
+		 * 如果当前上下文没有实现EnvironmentCapable{@link EnvironmentCapable}接口的话
 		 * 返回一个标准环境（非web环境）
+		 * 如果当前上下文环境实现了EnvironmentCapable接口，则返回当前环境
 		 */
 		if (registry instanceof EnvironmentCapable) {
 			return ((EnvironmentCapable) registry).getEnvironment();

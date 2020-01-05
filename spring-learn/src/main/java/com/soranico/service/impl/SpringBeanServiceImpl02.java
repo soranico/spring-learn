@@ -1,14 +1,14 @@
 package com.soranico.service.impl;
 
-import com.soranico.service.SpringLearnService;
+import com.soranico.service.SpringBeanService02;
 import org.springframework.stereotype.Service;
 
 /**
  * <pre>
- * @title com.soranico.service.impl.SpringLearnServiceImpl01
+ * @title com.soranico.service.impl.SpringLearnServiceImpl02
  * @description
  *        <pre>
- *          spring学习的service实现
+ *          使用@Bean注解
  *        </pre>
  *
  * @author soranico
@@ -18,9 +18,9 @@ import org.springframework.stereotype.Service;
  * </pre>
  */
 @Service
-public class SpringLearnServiceImpl implements SpringLearnService {
+public class SpringBeanServiceImpl02 implements SpringBeanService02 {
 	/**
-	 * @param null
+	 * @para null
 	 * @return
 	 * @description spring学习01
 	 * @author soranico
@@ -29,6 +29,6 @@ public class SpringLearnServiceImpl implements SpringLearnService {
 	 */
 	@Override
 	public void learn01() {
-		System.err.println("SpringLearnServiceImpl01被扫描到了");
+		System.err.println("SpringLearnServiceImpl02被扫描到了");
 	}
 }

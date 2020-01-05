@@ -55,7 +55,10 @@ class ConditionEvaluator {
 	 */
 	public ConditionEvaluator(@Nullable BeanDefinitionRegistry registry,
 			@Nullable Environment environment, @Nullable ResourceLoader resourceLoader) {
-
+		/**
+		 * 初始化条件解析器
+		 * {@link ConditionContextImpl#ConditionContextImpl(BeanDefinitionRegistry, Environment, ResourceLoader)}
+		 */
 		this.context = new ConditionContextImpl(registry, environment, resourceLoader);
 	}
 
@@ -66,8 +69,12 @@ class ConditionEvaluator {
 	 * {@code @Configuration} class will be {@link ConfigurationPhase#PARSE_CONFIGURATION})
 	 * @param metadata the meta data
 	 * @return if the item should be skipped
+	 * 根据@Conditional注解判断一个类是否应该跳过注册
 	 */
 	public boolean shouldSkip(AnnotatedTypeMetadata metadata) {
+		/**
+		 * 委托调用{@link #shouldSkip(AnnotatedTypeMetadata, ConfigurationPhase)}
+		 */
 		return shouldSkip(metadata, null);
 	}
 
@@ -80,7 +87,7 @@ class ConditionEvaluator {
 	public boolean shouldSkip(@Nullable AnnotatedTypeMetadata metadata, @Nullable ConfigurationPhase phase) {
 		/**
 		 * 如果当前注册为bd的类加了@Conditional注解
-		 * 则跳过扫描
+		 * 则根据注解的信息判断当前类是否需要跳过扫描
 		 */
 		if (metadata == null || !metadata.isAnnotated(Conditional.class.getName())) {
 			return false;
@@ -150,7 +157,10 @@ class ConditionEvaluator {
 
 		public ConditionContextImpl(@Nullable BeanDefinitionRegistry registry,
 				@Nullable Environment environment, @Nullable ResourceLoader resourceLoader) {
-
+			/**
+			 * 初始化ConditionContextImpl
+			 * 包括spring的注册器（上下文环境），工厂，默认环境，资源加载，类加载
+			 */
 			this.registry = registry;
 			this.beanFactory = deduceBeanFactory(registry);
 			this.environment = (environment != null ? environment : deduceEnvironment(registry));

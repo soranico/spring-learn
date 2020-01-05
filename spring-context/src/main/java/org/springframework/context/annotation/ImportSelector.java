@@ -48,6 +48,8 @@ import org.springframework.core.type.AnnotationMetadata;
 public interface ImportSelector {
 
 	/**
+	 * 返回字符串，spring会将该字符串对应的类添加到
+	 * spring工厂的beanDefinitionMap里
 	 * Select and return the names of which class(es) should be imported based on
 	 * the {@link AnnotationMetadata} of the importing @{@link Configuration} class.
 	 */

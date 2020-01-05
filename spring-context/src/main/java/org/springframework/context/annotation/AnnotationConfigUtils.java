@@ -171,7 +171,8 @@ public abstract class AnnotationConfigUtils {
 			}
 			if (!(beanFactory.getAutowireCandidateResolver() instanceof ContextAnnotationAutowireCandidateResolver)) {
 				/**
-				 * 给spring工厂赋予提供延迟加载的功能
+				 * setAutowireCandidateResolver()：给spring工厂设置一个自动装配的解析器
+				 * ContextAnnotationAutowireCandidateResolver：spring的一个提供lazy的解析器
 				 * {@link ContextAnnotationAutowireCandidateResolver}
 				 */
 				beanFactory.setAutowireCandidateResolver(new ContextAnnotationAutowireCandidateResolver());
@@ -179,6 +180,9 @@ public abstract class AnnotationConfigUtils {
 		}
 		/**
 		 * BeanDefinitionHolder：类似于封装成为一个map，方便数据传递
+		 * 这里为什么要初始化大小8，因为Java默认大小是第一个大于我们指定大小的
+		 * 2的指数次幂，spring在后面注册了6个BeanDefinition，而8 > 6
+		 * 因此使用8可以避免java底层再次计算，提高性能
 		 * @see BeanDefinitionHolder
 		 */
 		Set<BeanDefinitionHolder> beanDefs = new LinkedHashSet<>(8);
@@ -300,11 +304,26 @@ public abstract class AnnotationConfigUtils {
 		}
 	}
 
+	/**
+	 * @param abd：非spring内部的Class且加了注解的bd
+	 * @return
+	 * @description 解析bd，对db注解初始化
+	 * @author soranico
+	 * @date 2019/12/18
+	 * @version 1.0
+	 */
 	public static void processCommonDefinitionAnnotations(AnnotatedBeanDefinition abd) {
+		/**
+		 * {@link #processCommonDefinitionAnnotations(AnnotatedBeanDefinition, AnnotatedTypeMetadata)}
+		 */
 		processCommonDefinitionAnnotations(abd, abd.getMetadata());
 	}
 
 	static void processCommonDefinitionAnnotations(AnnotatedBeanDefinition abd, AnnotatedTypeMetadata metadata) {
+		/**
+		 * 是否需要懒加载
+		 * 如果需要，初始化
+		 */
 		AnnotationAttributes lazy = attributesFor(metadata, Lazy.class);
 		if (lazy != null) {
 			abd.setLazyInit(lazy.getBoolean("value"));

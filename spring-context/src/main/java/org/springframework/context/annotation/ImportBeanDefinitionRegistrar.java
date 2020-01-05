@@ -50,6 +50,8 @@ import org.springframework.core.type.AnnotationMetadata;
 public interface ImportBeanDefinitionRegistrar {
 
 	/**
+	 *
+	 * 可以注册一个BeanDefinition到spring中，mybatis就是利用了这个实现将接口代理注册给spring
 	 * Register bean definitions as necessary based on the given annotation metadata of
 	 * the importing {@code @Configuration} class.
 	 * <p>Note that {@link BeanDefinitionRegistryPostProcessor} types may <em>not</em> be
