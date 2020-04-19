@@ -65,6 +65,9 @@ final class PostProcessorRegistrationDelegate {
 			 * 首先将自定义的spring工厂增强类放入集合
 			 * 这里需要注意，如果增强类实现的是BeanDefinitionRegistryPostProcessor接口
 			 * 则会先执行postProcessBeanDefinitionRegistry()，然后再存放到集合
+			 *
+			 * 注意：
+			 * 当前只是执行方法，没有放入到spring的容器中
 			 */
 			for (BeanFactoryPostProcessor postProcessor : beanFactoryPostProcessors) {
 				if (postProcessor instanceof BeanDefinitionRegistryPostProcessor) {
@@ -83,7 +86,7 @@ final class PostProcessorRegistrationDelegate {
 			// Separate between BeanDefinitionRegistryPostProcessors that implement
 			// PriorityOrdered, Ordered, and the rest.
 			/**
-			 *
+			 *存放spring内部的和@Component标记的实现BeanDefinitionRegistryPostProcessor的类
 			 */
 			List<BeanDefinitionRegistryPostProcessor> currentRegistryProcessors = new ArrayList<>();
 
@@ -100,7 +103,19 @@ final class PostProcessorRegistrationDelegate {
 			 * {@link PriorityOrdered}
 			 */
 			for (String ppName : postProcessorNames) {
+				/**
+				 * spring的singletonObjects里有3个bean
+				 * 1.systemEnvironment
+				 * 2.environment
+				 * 3.systemProperties
+				 */
 				if (beanFactory.isTypeMatch(ppName, PriorityOrdered.class)) {
+					/**
+					 * 从singletonObjects中取出BeanDefinitionRegistryPostProcessor类型的bean
+					 * 没有则创建并放入singletonObjects
+					 * spring内部的会放入到容器中，手动添加的不会放入
+					 * 那么@Component的呢？TODO
+					 */
 					currentRegistryProcessors.add(beanFactory.getBean(ppName, BeanDefinitionRegistryPostProcessor.class));
 					processedBeans.add(ppName);
 				}
@@ -322,7 +337,7 @@ final class PostProcessorRegistrationDelegate {
 		/**
 		 * 循环调用实现类的postProcessBeanDefinitionRegistry()
 		 * 1.ConfigurationClassPostProcessor
-		 * 	{@link org.springframework.context.annotation.ConfigurationClassPostProcessor#postProcessBeanDefinitionRegistry(BeanDefinitionRegistry)}
+		 *    {@link org.springframework.context.annotation.ConfigurationClassPostProcessor#postProcessBeanDefinitionRegistry(BeanDefinitionRegistry)}
 		 */
 		for (BeanDefinitionRegistryPostProcessor postProcessor : postProcessors) {
 			postProcessor.postProcessBeanDefinitionRegistry(registry);

@@ -1,6 +1,7 @@
 package com.soranico.service;
 
 import org.springframework.beans.factory.FactoryBean;
+import org.springframework.stereotype.Service;
 
 /**
  * <pre>
@@ -16,14 +17,15 @@ import org.springframework.beans.factory.FactoryBean;
  *
  * </pre>
  */
+@Service
 public class MyFactoryBean implements FactoryBean {
 	@Override
 	public Object getObject() throws Exception {
-		return null;
+		return new MyFactoryBean();
 	}
 
 	@Override
 	public Class<?> getObjectType() {
-		return null;
+		return MyFactoryBean.class;
 	}
 }

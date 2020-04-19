@@ -27,6 +27,8 @@ public class MyBeanFactoryPostProcessor implements BeanFactoryPostProcessor {
 	 */
 	@Override
 	public void postProcessBeanFactory(ConfigurableListableBeanFactory beanFactory) throws BeansException {
-
+//		BeanDefinition beanDefinition = beanFactory.getBeanDefinition("&myFactoryBean");
+//		beanDefinition.setFactoryBeanName("myFactoryBean");
+		String[] beanDefinitionNames = beanFactory.getBeanDefinitionNames();
 	}
 }

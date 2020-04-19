@@ -1,7 +1,6 @@
 package com.soranico.service.impl;
 
 import com.soranico.service.SpringBeanService01;
-import org.springframework.stereotype.Service;
 
 /**
  * <pre>
@@ -17,7 +16,7 @@ import org.springframework.stereotype.Service;
  *
  * </pre>
  */
-@Service
+//@Service
 public class SpringBeanServiceImpl01 implements SpringBeanService01 {
 	/**
 	 * @para null

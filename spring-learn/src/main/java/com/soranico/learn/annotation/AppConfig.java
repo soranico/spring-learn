@@ -3,11 +3,6 @@ package com.soranico.learn.annotation;
 import com.soranico.learn.annotation.myimport.MyImport;
 import com.soranico.learn.annotation.myimport.MyImportBeanDefinitionRegistrar;
 import com.soranico.learn.annotation.myimport.MyImportSelector;
-import com.soranico.service.SpringBeanService01;
-import com.soranico.service.SpringBeanService02;
-import com.soranico.service.impl.SpringBeanServiceImpl01;
-import com.soranico.service.impl.SpringBeanServiceImpl02;
-import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
@@ -33,16 +28,16 @@ import org.springframework.context.annotation.Import;
 @Import({MyImport.class, MyImportSelector.class, MyImportBeanDefinitionRegistrar.class})
 public class AppConfig {
 
-	@Bean
-	public SpringBeanService01 springBeanService01() {
-		return new SpringBeanServiceImpl01();
-	}
-
-	@Bean
-	public SpringBeanService02 springBeanService02() {
-		springBeanService01();
-		return new SpringBeanServiceImpl02();
-	}
+//	@Bean
+//	public SpringBeanService01 springBeanService01() {
+//		return new SpringBeanServiceImpl01();
+//	}
+//
+//	@Bean
+//	public SpringBeanService02 springBeanService02() {
+//		springBeanService01();
+//		return new SpringBeanServiceImpl02();
+//	}
 
 
 }

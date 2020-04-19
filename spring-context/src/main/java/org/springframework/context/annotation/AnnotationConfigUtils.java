@@ -156,7 +156,7 @@ public abstract class AnnotationConfigUtils {
 	public static Set<BeanDefinitionHolder> registerAnnotationConfigProcessors(
 			BeanDefinitionRegistry registry, @Nullable Object source) {
 		/**
-		 * 根据注册器获取spring的工厂
+		 * 根据注册器获取spring的工厂，返回DefaultListableBeanFactory
 		 * {@link #unwrapDefaultListableBeanFactory(BeanDefinitionRegistry)}
 		 */
 		DefaultListableBeanFactory beanFactory = unwrapDefaultListableBeanFactory(registry);

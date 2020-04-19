@@ -297,8 +297,8 @@ public class ClassPathBeanDefinitionScanner extends ClassPathScanningCandidateCo
 				}
 
 				/**
-				 * 解析当前BeanDefinition对应的类的
-				 * 注解信息。{@link AnnotationConfigUtils#processCommonDefinitionAnnotations(AnnotatedBeanDefinition)}
+				 * 解析当前BeanDefinition对应的类的注解信息。
+				 * {@link AnnotationConfigUtils#processCommonDefinitionAnnotations(AnnotatedBeanDefinition)}
 				 */
 				if (candidate instanceof AnnotatedBeanDefinition) {
 					AnnotationConfigUtils.processCommonDefinitionAnnotations((AnnotatedBeanDefinition) candidate);
@@ -306,6 +306,14 @@ public class ClassPathBeanDefinitionScanner extends ClassPathScanningCandidateCo
 				/** 检测当前BeanDefinition是否已经注册过 */
 				if (checkCandidate(beanName, candidate)) {
 					BeanDefinitionHolder definitionHolder = new BeanDefinitionHolder(candidate, beanName);
+
+					/**
+					 * bean的代理模式，默认不用代理
+					 * NO=DEFAULT
+					 * INTERFACE:JDK
+					 * TARGET_CLASS:CGLIB
+					 * TODO
+					 */
 					definitionHolder =
 							AnnotationConfigUtils.applyScopedProxyMode(scopeMetadata, definitionHolder, this.registry);
 					beanDefinitions.add(definitionHolder);
@@ -329,7 +337,14 @@ public class ClassPathBeanDefinitionScanner extends ClassPathScanningCandidateCo
 	 * @param beanName the generated bean name for the given bean
 	 */
 	protected void postProcessBeanDefinition(AbstractBeanDefinition beanDefinition, String beanName) {
-		/** 给当前BeanDefinition设置一些默认属性 */
+		/**
+		 * 给当前BeanDefinition设置一些默认属性
+		 * 1.lazy
+		 * 2.autowireMode:默认AUTOWIRE_NO,所以spring的默认装配模式是不自动装配
+		 * 	 我们经常说自动装配，是spring用了byType的技术 TODO
+		 * 3.init和 destroy方法
+		 * 4.其他
+		 **/
 		beanDefinition.applyDefaults(this.beanDefinitionDefaults);
 		if (this.autowireCandidatePatterns != null) {
 			beanDefinition.setAutowireCandidate(PatternMatchUtils.simpleMatch(this.autowireCandidatePatterns, beanName));
