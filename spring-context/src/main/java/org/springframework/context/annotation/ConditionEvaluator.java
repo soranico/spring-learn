@@ -94,6 +94,14 @@ class ConditionEvaluator {
 		}
 
 		if (phase == null) {
+			/**
+			 * 注解BD并且使用了@Configuration
+			 * @Component
+			 * @Import
+			 * @ComponentSacn
+			 * @ImportResource
+			 * 表示当前Class需要被当做一个Config类解析
+			 */
 			if (metadata instanceof AnnotationMetadata &&
 					ConfigurationClassUtils.isConfigurationCandidate((AnnotationMetadata) metadata)) {
 				return shouldSkip(metadata, ConfigurationPhase.PARSE_CONFIGURATION);

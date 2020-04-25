@@ -198,6 +198,9 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
 	 */
 	public void setSerializationId(@Nullable String serializationId) {
 		if (serializationId != null) {
+			/**
+			 * 为当前工厂序列化唯一ID进行缓存
+			 */
 			serializableFactories.put(serializationId, new WeakReference<>(this));
 		} else if (this.serializationId != null) {
 			serializableFactories.remove(this.serializationId);

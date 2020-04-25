@@ -539,7 +539,12 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 			prepareRefresh();
 
 			// Tell the subclass to refresh the internal bean factory.
-			/** 通知子类刷新其内部的工厂 */
+			/**
+			 * 获取工厂
+			 * 本质上DefaultListableBeanFactory是GenericApplicationContext的子类
+			 * 因此就是调用{@link org.springframework.beans.factory.support.DefaultListableBeanFactory#setSerializationId(String)}
+			 * 序列化缓存当前工厂
+			 */
 			ConfigurableListableBeanFactory beanFactory = obtainFreshBeanFactory();
 
 			// Prepare the bean factory for use in this context.
@@ -580,6 +585,9 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 				registerListeners();
 
 				// Instantiate all remaining (non-lazy-init) singletons.
+				/**
+				 * 实例化Bean
+				 */
 				finishBeanFactoryInitialization(beanFactory);
 
 				// Last step: publish corresponding event.
@@ -663,6 +671,7 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 	 * @see #getBeanFactory()
 	 */
 	protected ConfigurableListableBeanFactory obtainFreshBeanFactory() {
+		/** 刷新工厂 */
 		refreshBeanFactory();
 		return getBeanFactory();
 	}
@@ -681,8 +690,9 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 		 */
 		beanFactory.setBeanExpressionResolver(new StandardBeanExpressionResolver(beanFactory.getBeanClassLoader()));
 		/**
-		 * xml文件的<property ref="bean"></property>
-		 * 解析字符串bean对应的bean对象
+		 * spring的资源解析器
+		 * 目前不知道做什么的
+		 * TODO
 		 */
 		beanFactory.addPropertyEditorRegistrar(new ResourceEditorRegistrar(this, getEnvironment()));
 

@@ -70,7 +70,7 @@ public class AnnotationConfigApplicationContext extends GenericApplicationContex
 		 * AnnotatedBeanDefinitionReader可以将一个普通类，注册成为一个
 		 * BeanDefinition{@link org.springframework.beans.factory.config.BeanDefinition}
 		 * （spring中用来描述一个bean的类，类似JAVA中的类和Class类的关系）
-		 * 注册AnnotatedBeanDefinitionReader的时候，传递this（spring环境），
+		 * 注册AnnotatedBeanDefinitionReader的时候，传递this（spring环境），在许多链式编程都会用到这个特性
 		 * 因此{@link org.springframework.beans.factory.support.BeanDefinitionRegistry}
 		 * 也是spring的环境，因为AnnotationConfigApplicationContext的父类{@link GenericApplicationContext}继承了BeanDefinitionRegistry
 		 */

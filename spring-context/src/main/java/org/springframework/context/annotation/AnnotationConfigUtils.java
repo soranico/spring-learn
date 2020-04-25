@@ -265,7 +265,7 @@ public abstract class AnnotationConfigUtils {
 	 */
 	private static BeanDefinitionHolder registerPostProcessor(
 			BeanDefinitionRegistry registry, RootBeanDefinition definition, String beanName) {
-
+		/** 设置当前Bean的角色，为内部使用*/
 		definition.setRole(BeanDefinition.ROLE_INFRASTRUCTURE);
 		/**
 		 * 向spring工厂里注册bd
