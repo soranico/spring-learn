@@ -138,6 +138,9 @@ class ComponentScanAnnotationParser {
 		}
 		/**
 		 * 如果包名为空，则使用当前类所在的包
+		 * springboot可以自动扫描启动类同级
+		 * 类的原理是不是这个？
+		 * TODO
 		 */
 		if (basePackages.isEmpty()) {
 			basePackages.add(ClassUtils.getPackageName(declaringClass));

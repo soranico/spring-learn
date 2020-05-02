@@ -319,6 +319,12 @@ public abstract class AnnotationConfigUtils {
 		processCommonDefinitionAnnotations(abd, abd.getMetadata());
 	}
 
+	/**
+	 * 解析注解Bean的一些基本注解
+	 * 解析注解为@Lazy | @Primary | @DependOn | @Role | @Description
+	 * @param abd
+	 * @param metadata
+	 */
 	static void processCommonDefinitionAnnotations(AnnotatedBeanDefinition abd, AnnotatedTypeMetadata metadata) {
 		/**
 		 * 是否需要懒加载
@@ -355,6 +361,9 @@ public abstract class AnnotationConfigUtils {
 	static BeanDefinitionHolder applyScopedProxyMode(
 			ScopeMetadata metadata, BeanDefinitionHolder definition, BeanDefinitionRegistry registry) {
 
+		/**
+		 * 获取代理模式
+		 */
 		ScopedProxyMode scopedProxyMode = metadata.getScopedProxyMode();
 		if (scopedProxyMode.equals(ScopedProxyMode.NO)) {
 			return definition;

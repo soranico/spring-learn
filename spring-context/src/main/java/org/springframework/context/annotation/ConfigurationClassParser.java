@@ -180,6 +180,9 @@ class ConfigurationClassParser {
 			}
 		}
 
+		/**
+		 * 处理实现DeferredImportSelector的类
+		 */
 		this.deferredImportSelectorHandler.process();
 	}
 
@@ -236,7 +239,7 @@ class ConfigurationClassParser {
 	protected void processConfigurationClass(ConfigurationClass configClass) throws IOException {
 		/**
 		 * 判断是否需要跳过解析
-		 * 具体解析 TODO
+		 * 具体解析数据来源 TODO 不懂
 		 */
 		if (this.conditionEvaluator.shouldSkip(configClass.getMetadata(), ConfigurationPhase.PARSE_CONFIGURATION)) {
 			return;
@@ -276,11 +279,19 @@ class ConfigurationClassParser {
 			/**
 			 * 解析配置类信息
 			 * {@link #doProcessConfigurationClass(ConfigurationClass, SourceClass)}
+			 * 有父类返回父类，然后解析父类
+			 * 没有返回null，结束解析
 			 */
 			sourceClass = doProcessConfigurationClass(configClass, sourceClass);
 		}
 		while (sourceClass != null);
 
+
+		/**
+		 * 使用注解标记的了类，
+		 * 实现ImportBeanDefinitionRegistrar的类不会放入其中
+		 * @Bean注解的也不会
+		 */
 		this.configurationClasses.put(configClass, configClass);
 	}
 
@@ -410,6 +421,9 @@ class ConfigurationClassParser {
 		}
 
 		// Process default methods on interfaces
+		/**
+		 * 解析实现接口的默认方法，并且@Bean标记
+		 */
 		processInterfaces(configClass, sourceClass);
 
 		// Process superclass, if any
@@ -419,6 +433,9 @@ class ConfigurationClassParser {
 					!this.knownSuperclasses.containsKey(superclass)) {
 				this.knownSuperclasses.put(superclass, configClass);
 				// Superclass found, return its annotation metadata and recurse
+				/**
+				 * 存在父类，返回解析父类信息
+				 */
 				return sourceClass.getSuperClass();
 			}
 		}
@@ -674,7 +691,10 @@ class ConfigurationClassParser {
 						 */
 						ParserStrategyUtils.invokeAwareMethods(
 								selector, this.environment, this.resourceLoader, this.registry);
-						/** 是否需要延迟加载 */
+						/**
+						 * 是否需要延迟加载
+						 * TODO 测一下
+						 */
 						if (selector instanceof DeferredImportSelector) {
 							this.deferredImportSelectorHandler.handle(configClass, (DeferredImportSelector) selector);
 						} else {
@@ -901,6 +921,10 @@ class ConfigurationClassParser {
 			}
 		}
 
+		/**
+		 * 处理实现DeferredImportSelector
+		 * 的类，按组分类
+		 */
 		public void process() {
 			List<DeferredImportSelectorHolder> deferredImports = this.deferredImportSelectors;
 			this.deferredImportSelectors = null;
@@ -908,7 +932,9 @@ class ConfigurationClassParser {
 				if (deferredImports != null) {
 					DeferredImportSelectorGroupingHandler handler = new DeferredImportSelectorGroupingHandler();
 					deferredImports.sort(DEFERRED_IMPORT_COMPARATOR);
+					// 分组
 					deferredImports.forEach(handler::register);
+					// 执行selectImports()
 					handler.processGroupImports();
 				}
 			} finally {

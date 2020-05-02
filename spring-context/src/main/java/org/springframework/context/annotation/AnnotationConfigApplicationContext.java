@@ -79,7 +79,6 @@ public class AnnotationConfigApplicationContext extends GenericApplicationContex
 		 * 扫描类，将其转化为bd
 		 * 这个ClassPathBeanDefinitionScanner是提供给
 		 * 我们手动调用{@link #scan(String...)}方法而初始化的
-		 *
 		 */
 		this.scanner = new ClassPathBeanDefinitionScanner(this);
 	}
