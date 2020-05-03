@@ -206,7 +206,7 @@ public abstract class AnnotationConfigUtils {
 			beanDefs.add(registerPostProcessor(registry, def, CONFIGURATION_ANNOTATION_PROCESSOR_BEAN_NAME));
 		}
 		/**
-		 * 下面几个类都继承了BeanPostProcessor
+		 * 继承 MergedBeanDefinitionPostProcessor
 		 * {@link org.springframework.beans.factory.config.BeanPostProcessor}
 		 * 而BeanPostProcessor可以插手spring的bean的创建
 		 * 因此，当我们写的类继承BeanPostProcessor时也可以插手spring的bean的创建
@@ -216,7 +216,9 @@ public abstract class AnnotationConfigUtils {
 			def.setSource(source);
 			beanDefs.add(registerPostProcessor(registry, def, AUTOWIRED_ANNOTATION_PROCESSOR_BEAN_NAME));
 		}
-
+		/**
+		 * 继承InstantiationAwareBeanPostProcessor
+		 */
 		// Check for JSR-250 support, and if present add the CommonAnnotationBeanPostProcessor.
 		if (jsr250Present && !registry.containsBeanDefinition(COMMON_ANNOTATION_PROCESSOR_BEAN_NAME)) {
 			RootBeanDefinition def = new RootBeanDefinition(CommonAnnotationBeanPostProcessor.class);
@@ -224,7 +226,10 @@ public abstract class AnnotationConfigUtils {
 			beanDefs.add(registerPostProcessor(registry, def, COMMON_ANNOTATION_PROCESSOR_BEAN_NAME));
 		}
 
-		// Check for JPA support, and if present add the PersistenceAnnotationBeanPostProcessor.
+		/**
+		 * 不会注册
+		 */
+		// Check for JPA support, and if present add the PersistenceAnnotationBeanPostProcessor.//不会注册
 		if (jpaPresent && !registry.containsBeanDefinition(PERSISTENCE_ANNOTATION_PROCESSOR_BEAN_NAME)) {
 			RootBeanDefinition def = new RootBeanDefinition();
 			try {
@@ -237,7 +242,9 @@ public abstract class AnnotationConfigUtils {
 			def.setSource(source);
 			beanDefs.add(registerPostProcessor(registry, def, PERSISTENCE_ANNOTATION_PROCESSOR_BEAN_NAME));
 		}
-
+		/**
+		 * 实现BeanFactoryPostProcessor
+		 */
 		if (!registry.containsBeanDefinition(EVENT_LISTENER_PROCESSOR_BEAN_NAME)) {
 			RootBeanDefinition def = new RootBeanDefinition(EventListenerMethodProcessor.class);
 			def.setSource(source);

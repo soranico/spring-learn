@@ -308,7 +308,7 @@ public class ClassPathBeanDefinitionScanner extends ClassPathScanningCandidateCo
 					BeanDefinitionHolder definitionHolder = new BeanDefinitionHolder(candidate, beanName);
 
 					/**
-					 * bean的代理模式，默认不用代理
+					 * bean的Scope代理模式，默认不用代理
 					 * NO=DEFAULT
 					 * INTERFACE:JDK
 					 * TARGET_CLASS:CGLIB

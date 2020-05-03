@@ -259,7 +259,10 @@ public class ConfigurationClassPostProcessor implements BeanDefinitionRegistryPo
 		 * {@link #enhanceConfigurationClasses(ConfigurableListableBeanFactory)}
 		 */
 		enhanceConfigurationClasses(beanFactory);
-
+		/**
+		 * 添加BeanPostProcess
+		 * ImportAwareBeanPostProcessor继承InstantiationAwareBeanPostProcessor 间接实现了PriorityOrdered
+		 */
 		beanFactory.addBeanPostProcessor(new ImportAwareBeanPostProcessor(beanFactory));
 	}
 
@@ -435,7 +438,8 @@ public class ConfigurationClassPostProcessor implements BeanDefinitionRegistryPo
 		while (!candidates.isEmpty());
 
 		/**
-		 * 注册当前PostProcessor为ImportRegistry
+		 * 手动注册一个单例对象
+		 * org.springframework.context.annotation.ConfigurationClassPostProcessor.importRegistry
 		 * TODO 不懂
 		 */
 		// Register the ImportRegistry as a bean in order to support ImportAware @Configuration classes
@@ -511,6 +515,11 @@ public class ConfigurationClassPostProcessor implements BeanDefinitionRegistryPo
 		for (Map.Entry<String, AbstractBeanDefinition> entry : configBeanDefs.entrySet()) {
 			AbstractBeanDefinition beanDef = entry.getValue();
 			// If a @Configuration class gets proxied, always proxy the target class
+			/**
+			 * 为BeanDefinition设置属性
+			 * org.springframework.aop.framework.autoproxy.AutoProxyUtils.preserveTargetClass
+			 *
+			 */
 			beanDef.setAttribute(AutoProxyUtils.PRESERVE_TARGET_CLASS_ATTRIBUTE, Boolean.TRUE);
 			try {
 				// Set enhanced subclass of the user-specified bean class

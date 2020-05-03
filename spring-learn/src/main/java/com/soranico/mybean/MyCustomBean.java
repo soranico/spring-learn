@@ -1,5 +1,7 @@
 package com.soranico.mybean;
 
+import org.springframework.beans.factory.annotation.Autowired;
+
 /**
  * <pre>
  * @title com.soranico.learn.annotation.mybean.MyBean
@@ -15,11 +17,17 @@ package com.soranico.mybean;
  * </pre>
  */
 public class MyCustomBean {
+	@Autowired
 	private MyBean myBean;
-	public MyCustomBean(MyBean myBean){
+
+	public MyCustomBean(MyBean myBean) {
 		System.err.println("MyCustomBean");
-		this.myBean=myBean;
+		this.myBean = myBean;
 	}
 
+	public MyCustomBean() {
+		System.err.println("MyCustomBean");
+		this.myBean = myBean;
+	}
 
 }

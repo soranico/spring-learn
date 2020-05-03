@@ -16,15 +16,8 @@
 
 package org.springframework.context.annotation;
 
-import java.lang.reflect.Field;
-import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
-import java.lang.reflect.Proxy;
-import java.util.Arrays;
-
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-
 import org.springframework.aop.scope.ScopedProxyFactoryBean;
 import org.springframework.asm.Type;
 import org.springframework.beans.factory.BeanFactory;
@@ -38,13 +31,7 @@ import org.springframework.cglib.core.ClassGenerator;
 import org.springframework.cglib.core.Constants;
 import org.springframework.cglib.core.DefaultGeneratorStrategy;
 import org.springframework.cglib.core.SpringNamingPolicy;
-import org.springframework.cglib.proxy.Callback;
-import org.springframework.cglib.proxy.CallbackFilter;
-import org.springframework.cglib.proxy.Enhancer;
-import org.springframework.cglib.proxy.Factory;
-import org.springframework.cglib.proxy.MethodInterceptor;
-import org.springframework.cglib.proxy.MethodProxy;
-import org.springframework.cglib.proxy.NoOp;
+import org.springframework.cglib.proxy.*;
 import org.springframework.cglib.transform.ClassEmitterTransformer;
 import org.springframework.cglib.transform.TransformingClassGenerator;
 import org.springframework.lang.Nullable;
@@ -54,6 +41,12 @@ import org.springframework.util.Assert;
 import org.springframework.util.ClassUtils;
 import org.springframework.util.ObjectUtils;
 import org.springframework.util.ReflectionUtils;
+
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
+import java.lang.reflect.Proxy;
+import java.util.Arrays;
 
 /**
  * Enhances {@link Configuration} classes by generating a CGLIB subclass which
@@ -90,11 +83,16 @@ class ConfigurationClassEnhancer {
 
 
 	/**
+	 * 对目标类进行cglib代理
 	 * Loads the specified class and generates a CGLIB subclass of it equipped with
 	 * container-aware callbacks capable of respecting scoping and other bean semantics.
 	 * @return the enhanced subclass
 	 */
 	public Class<?> enhance(Class<?> configClass, @Nullable ClassLoader classLoader) {
+		/**
+		 * 当前需要代理的类是否为EnhancedConfiguration
+		 * 是则直接返回
+		 */
 		if (EnhancedConfiguration.class.isAssignableFrom(configClass)) {
 			if (logger.isDebugEnabled()) {
 				logger.debug(String.format("Ignoring request to enhance %s as it has " +
@@ -106,6 +104,9 @@ class ConfigurationClassEnhancer {
 			}
 			return configClass;
 		}
+		/**
+		 * 进行代理
+		 */
 		Class<?> enhancedClass = createClass(newEnhancer(configClass, classLoader));
 		if (logger.isTraceEnabled()) {
 			logger.trace(String.format("Successfully enhanced %s; enhanced class name is: %s",
@@ -119,12 +120,35 @@ class ConfigurationClassEnhancer {
 	 */
 	private Enhancer newEnhancer(Class<?> configSuperClass, @Nullable ClassLoader classLoader) {
 		Enhancer enhancer = new Enhancer();
+		/**
+		 * 设置父类，因为cglib基于基础
+		 */
 		enhancer.setSuperclass(configSuperClass);
+		/**
+		 * 设置接口EnhancedConfiguration
+		 */
 		enhancer.setInterfaces(new Class<?>[] {EnhancedConfiguration.class});
 		enhancer.setUseFactory(false);
+		/**
+		 * 设置代理类名生成策略
+		 * BySpringCGLIB
+		 */
 		enhancer.setNamingPolicy(SpringNamingPolicy.INSTANCE);
+		/**
+		 * 代理类的生成策略，添加了一个属性
+		 * $$beanFactory：用于后序获取bean，以此判断需不需要再次实例
+		 */
 		enhancer.setStrategy(new BeanFactoryAwareGeneratorStrategy(classLoader));
+		/**
+		 * 设置回调拦截策略
+		 * new BeanMethodInterceptor()：方法拦截
+		 * new BeanFactoryAwareMethodInterceptor()：对于setBeanFactory进行拦截（i.e 实现BeanFactoryAware）
+		 * NoOp.INSTANCE ：直接对于被代理的方法不进行拦截
+		 */
 		enhancer.setCallbackFilter(CALLBACK_FILTER);
+		/**
+		 * 设置回调拦截类型
+		 */
 		enhancer.setCallbackTypes(CALLBACK_FILTER.getCallbackTypes());
 		return enhancer;
 	}

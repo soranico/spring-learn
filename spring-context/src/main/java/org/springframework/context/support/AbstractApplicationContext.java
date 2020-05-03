@@ -941,24 +941,43 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 
 		// Register a default embedded value resolver if no bean post-processor
 		// (such as a PropertyPlaceholderConfigurer bean) registered any before:
-		// at this point, primarily for resolution in annotation attribute values.
+		// at this point, primarily for resolution in annotation attribute values.// 注册用于解析字符串的解析器
+		/**
+		 * 如果没有指定解析器，注册一个字符串解析器
+		 * TODO 不懂 怎么指定
+		 */
 		if (!beanFactory.hasEmbeddedValueResolver()) {
 			beanFactory.addEmbeddedValueResolver(strVal -> getEnvironment().resolvePlaceholders(strVal));
 		}
 
-		// Initialize LoadTimeWeaverAware beans early to allow for registering their transformers early.
+		/**
+		 * 如果之前注册过LoadTimeWeaverAware类型的
+		 * 则首先实例化，这一个步也会把之前没有存到mergedBeanDefinitions(Map)
+		 * 中的BeanDefinition存入，以便后续实例化
+		 */
+		// Initialize LoadTimeWeaverAware beans early to allow for registering their transformers early. 如果之前注册lLoadTimeWeaverAware则首先初始化
 		String[] weaverAwareNames = beanFactory.getBeanNamesForType(LoadTimeWeaverAware.class, false, false);
 		for (String weaverAwareName : weaverAwareNames) {
 			getBean(weaverAwareName);
 		}
 
-		// Stop using the temporary ClassLoader for type matching.
+		/**
+		 * 停止使用临时类加载器匹配
+		 */
+		// Stop using the temporary ClassLoader for type matching.停止使用临时类加载器匹配
 		beanFactory.setTempClassLoader(null);
 
-		// Allow for caching all bean definition metadata, not expecting further changes.
+		/**
+		 * 关闭读取Configuration
+		 * 缓存使用需要解析的beanName到frozenBeanDefinitionNames(数组)
+		 */
+		// Allow for caching all bean definition metadata, not expecting further changes.缓存所有BeanDefinition的名字到frozenBeanDefinitionNames(数组）
 		beanFactory.freezeConfiguration();
 
-		// Instantiate all remaining (non-lazy-init) singletons.
+		// Instantiate all remaining (non-lazy-init) singletons. 实例化所有非懒加载的bean
+		/**
+		 * 实例化所有不需要懒加载的Bean
+		 */
 		beanFactory.preInstantiateSingletons();
 	}
 

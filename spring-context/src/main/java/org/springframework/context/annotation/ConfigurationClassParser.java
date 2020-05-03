@@ -250,6 +250,7 @@ class ConfigurationClassParser {
 			/**
 			 * 如果当前配置类被其他地方Import
 			 * 则将当前配置类的配置信息合并到引用类中
+			 * 跳过解析当前配置类，因为会在其他配置类中解析
 			 */
 			if (configClass.isImported()) {
 				if (existingClass.isImported()) {

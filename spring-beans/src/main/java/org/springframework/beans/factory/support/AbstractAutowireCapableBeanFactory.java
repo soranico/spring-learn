@@ -603,10 +603,21 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 	@Override
 	@Nullable
 	protected Class<?> predictBeanType(String beanName, RootBeanDefinition mbd, Class<?>... typesToMatch) {
-		Class<?> targetType = determineTargetType(beanName, mbd, typesToMatch);
+		Class<?> targetType = determineTargetType(beanName, mbd, typesToMatch);//决定出Class
 		// Apply SmartInstantiationAwareBeanPostProcessors to predict the
 		// eventual type after a before-instantiation shortcut.
+		/**
+		 * synthetic是编译器标记自己创建类的关键字，
+		 * hasInstantiationAwareBeanPostProcessors()一定为true,因为在postProcessorRegistrationDelegate#registerBeanPostProcessors()
+		 * 是注册的CommonAnnotationBeanDefinition和AutowiredAnnotationBeanPostProcessor
+		 * ImportAwareBeanPostProcessor都想实现了InstantiationAwareBeanPostProcessor
+		 */
 		if (targetType != null && !mbd.isSynthetic() && hasInstantiationAwareBeanPostProcessors()) {
+			/**
+			 * TODO 调用
+			 * 第一次调用bean后置处理器
+			 * 什么都没有做
+			 */
 			for (BeanPostProcessor bp : getBeanPostProcessors()) {
 				if (bp instanceof SmartInstantiationAwareBeanPostProcessor) {
 					SmartInstantiationAwareBeanPostProcessor ibp = (SmartInstantiationAwareBeanPostProcessor) bp;
