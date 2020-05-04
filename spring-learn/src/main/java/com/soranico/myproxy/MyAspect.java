@@ -1,5 +1,8 @@
 package com.soranico.myproxy;
 
+import org.aspectj.lang.annotation.Around;
+import org.aspectj.lang.annotation.Aspect;
+
 /**
  * <pre>
  * @title com.soranico.myproxy.MyAspect
@@ -14,5 +17,10 @@ package com.soranico.myproxy;
  *
  * </pre>
  */
+@Aspect
 public class MyAspect {
+	@Around("execution(* com.soranico.service.impl.*.*(..))")
+	public void proxy(){
+		System.err.println("aspect");
+	}
 }

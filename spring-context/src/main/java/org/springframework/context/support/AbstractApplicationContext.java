@@ -955,7 +955,7 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 		 * 则首先实例化，这一个步也会把之前没有存到mergedBeanDefinitions(Map)
 		 * 中的BeanDefinition存入，以便后续实例化
 		 */
-		// Initialize LoadTimeWeaverAware beans early to allow for registering their transformers early. 如果之前注册lLoadTimeWeaverAware则首先初始化
+		// Initialize LoadTimeWeaverAware beans early to allow for registering their transformers early.
 		String[] weaverAwareNames = beanFactory.getBeanNamesForType(LoadTimeWeaverAware.class, false, false);
 		for (String weaverAwareName : weaverAwareNames) {
 			getBean(weaverAwareName);
@@ -964,17 +964,17 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 		/**
 		 * 停止使用临时类加载器匹配
 		 */
-		// Stop using the temporary ClassLoader for type matching.停止使用临时类加载器匹配
+		// Stop using the temporary ClassLoader for type matching.
 		beanFactory.setTempClassLoader(null);
 
 		/**
 		 * 关闭读取Configuration
 		 * 缓存使用需要解析的beanName到frozenBeanDefinitionNames(数组)
 		 */
-		// Allow for caching all bean definition metadata, not expecting further changes.缓存所有BeanDefinition的名字到frozenBeanDefinitionNames(数组）
+		// Allow for caching all bean definition metadata, not expecting further changes.
 		beanFactory.freezeConfiguration();
 
-		// Instantiate all remaining (non-lazy-init) singletons. 实例化所有非懒加载的bean
+		// Instantiate all remaining (non-lazy-init) singletons.
 		/**
 		 * 实例化所有不需要懒加载的Bean
 		 */

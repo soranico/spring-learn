@@ -16,24 +16,8 @@
 
 package org.springframework.beans.factory.annotation;
 
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.Serializable;
-import java.lang.annotation.Annotation;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.BeanCreationException;
 import org.springframework.beans.factory.config.DestructionAwareBeanPostProcessor;
@@ -44,6 +28,16 @@ import org.springframework.core.PriorityOrdered;
 import org.springframework.lang.Nullable;
 import org.springframework.util.ClassUtils;
 import org.springframework.util.ReflectionUtils;
+
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.Serializable;
+import java.lang.annotation.Annotation;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * {@link org.springframework.beans.factory.config.BeanPostProcessor} implementation
@@ -125,7 +119,14 @@ public class InitDestroyAnnotationBeanPostProcessor
 
 	@Override
 	public void postProcessMergedBeanDefinition(RootBeanDefinition beanDefinition, Class<?> beanType, String beanName) {
+		/**
+		 * 调用findLifecycleMetadata()查找当前类的回调方法
+		 * 如果当前类有父类，则父类的回调方法也会得到
+		 */
 		LifecycleMetadata metadata = findLifecycleMetadata(beanType);
+		/**
+		 * 注册回调方法给当前解析的BeanDefinition
+		 */
 		metadata.checkConfigMembers(beanDefinition);
 	}
 
@@ -176,16 +177,27 @@ public class InitDestroyAnnotationBeanPostProcessor
 
 
 	private LifecycleMetadata findLifecycleMetadata(Class<?> clazz) {
+		/**
+		 * 创建的时候初始化的，会存在null的情况？
+		 * TODO 不懂
+		 */
 		if (this.lifecycleMetadataCache == null) {
 			// Happens after deserialization, during destruction...
 			return buildLifecycleMetadata(clazz);
 		}
 		// Quick check on the concurrent map first, with minimal locking.
+		/**
+		 * 先从缓存中获取当前bean的回调方法
+		 */
 		LifecycleMetadata metadata = this.lifecycleMetadataCache.get(clazz);
 		if (metadata == null) {
 			synchronized (this.lifecycleMetadataCache) {
 				metadata = this.lifecycleMetadataCache.get(clazz);
 				if (metadata == null) {
+					/**
+					 * 调用buildLifecycleMetadata()构建bean
+					 * 的生命回调方法
+					 */
 					metadata = buildLifecycleMetadata(clazz);
 					this.lifecycleMetadataCache.put(clazz, metadata);
 				}
@@ -195,16 +207,37 @@ public class InitDestroyAnnotationBeanPostProcessor
 		return metadata;
 	}
 
+	/**
+	 * 构建bean的生命回调方法
+	 * @param clazz 解析的类
+	 * @return 生命回调元数据
+	 */
 	private LifecycleMetadata buildLifecycleMetadata(final Class<?> clazz) {
+		/**
+		 * 存放初始化回调方法
+		 */
 		List<LifecycleElement> initMethods = new ArrayList<>();
+		/**
+		 * 存放销毁回调方法
+		 */
 		List<LifecycleElement> destroyMethods = new ArrayList<>();
 		Class<?> targetClass = clazz;
 
 		do {
+			/**
+			 * 当前解析init方法
+			 */
 			final List<LifecycleElement> currInitMethods = new ArrayList<>();
+			/**
+			 * 当前解析destroy方法
+			 */
 			final List<LifecycleElement> currDestroyMethods = new ArrayList<>();
 
 			ReflectionUtils.doWithLocalMethods(targetClass, method -> {
+				/**
+				 * 当前解析方法是否被@PostConstruct
+				 * 被标记则封装为LifecycleElement添加到currInitMethods
+				 */
 				if (this.initAnnotationType != null && method.isAnnotationPresent(this.initAnnotationType)) {
 					LifecycleElement element = new LifecycleElement(method);
 					currInitMethods.add(element);
@@ -212,6 +245,10 @@ public class InitDestroyAnnotationBeanPostProcessor
 						logger.trace("Found init method on class [" + clazz.getName() + "]: " + method);
 					}
 				}
+				/**
+				 * 当前解析方法是否被@PreDestroy
+				 * 被标记则封装为LifecycleElement添加到currDestroyMethods
+				 */
 				if (this.destroyAnnotationType != null && method.isAnnotationPresent(this.destroyAnnotationType)) {
 					currDestroyMethods.add(new LifecycleElement(method));
 					if (logger.isTraceEnabled()) {
@@ -222,6 +259,9 @@ public class InitDestroyAnnotationBeanPostProcessor
 
 			initMethods.addAll(0, currInitMethods);
 			destroyMethods.addAll(currDestroyMethods);
+			/**
+			 * 获取父类，如果父类存在回调方法，也会解析放入
+			 */
 			targetClass = targetClass.getSuperclass();
 		}
 		while (targetClass != null && targetClass != Object.class);
@@ -268,10 +308,17 @@ public class InitDestroyAnnotationBeanPostProcessor
 			this.destroyMethods = destroyMethods;
 		}
 
+		/**
+		 * 注册回调方法给当前解析的BeanDefinition
+		 * @param beanDefinition
+		 */
 		public void checkConfigMembers(RootBeanDefinition beanDefinition) {
 			Set<LifecycleElement> checkedInitMethods = new LinkedHashSet<>(this.initMethods.size());
 			for (LifecycleElement element : this.initMethods) {
 				String methodIdentifier = element.getIdentifier();
+				/**
+				 * 将初始化回调方法注册给当前解析的BeanDefinition
+				 */
 				if (!beanDefinition.isExternallyManagedInitMethod(methodIdentifier)) {
 					beanDefinition.registerExternallyManagedInitMethod(methodIdentifier);
 					checkedInitMethods.add(element);

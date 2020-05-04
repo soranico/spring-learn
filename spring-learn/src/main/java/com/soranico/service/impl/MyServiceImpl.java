@@ -1,6 +1,7 @@
 package com.soranico.service.impl;
 
 import com.soranico.service.MyService;
+import org.springframework.stereotype.Service;
 
 /**
  * <pre>
@@ -16,7 +17,7 @@ import com.soranico.service.MyService;
  *
  * </pre>
  */
-//@Service
+@Service
 public class MyServiceImpl implements MyService {
 
 

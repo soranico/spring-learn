@@ -2,9 +2,10 @@ package com.soranico.start.annotation.config;
 
 import com.soranico.mybean.MyBean;
 import com.soranico.mybean.MyCustomBean;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.ComponentScan;
-import org.springframework.context.annotation.Configuration;
+import com.soranico.myfactoryBean.MyFactoryBean;
+import com.soranico.myproxy.MyAspect;
+import org.springframework.context.annotation.*;
+import org.springframework.transaction.annotation.EnableTransactionManagement;
 
 /**
  * <pre>
@@ -24,6 +25,9 @@ import org.springframework.context.annotation.Configuration;
 @ComponentScan(basePackages = {
 		"com.soranico.service.**.**"
 })
+@EnableAspectJAutoProxy
+@EnableTransactionManagement
+@Import({MyAspect.class, MyFactoryBean.class})
 //@Import({MyImport.class, MyImportSelector.class, MyImportBeanDefinitionRegistrar.class})
 public class AppConfig extends AppConfigParent implements AppConfigInterface {
 

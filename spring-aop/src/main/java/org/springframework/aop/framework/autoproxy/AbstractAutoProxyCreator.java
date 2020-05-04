@@ -16,19 +16,9 @@
 
 package org.springframework.aop.framework.autoproxy;
 
-import java.lang.reflect.Constructor;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-
 import org.aopalliance.aop.Advice;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-
 import org.springframework.aop.Advisor;
 import org.springframework.aop.Pointcut;
 import org.springframework.aop.TargetSource;
@@ -49,6 +39,10 @@ import org.springframework.beans.factory.config.SmartInstantiationAwareBeanPostP
 import org.springframework.lang.Nullable;
 import org.springframework.util.Assert;
 import org.springframework.util.StringUtils;
+
+import java.lang.reflect.Constructor;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * {@link org.springframework.beans.factory.config.BeanPostProcessor} implementation
@@ -235,7 +229,13 @@ public abstract class AbstractAutoProxyCreator extends ProxyProcessorSupport
 
 	@Override
 	public Object getEarlyBeanReference(Object bean, String beanName) {
+		/**
+		 * 获取beanName,FactoryBean需要 &beanName
+		 */
 		Object cacheKey = getCacheKey(bean.getClass(), beanName);
+		/**
+		 * 向早期代理引用中earlyProxyReferences(Map)存放此未完全实例化的bean
+		 */
 		this.earlyProxyReferences.put(cacheKey, bean);
 		return wrapIfNecessary(bean, beanName, cacheKey);
 	}
@@ -243,11 +243,21 @@ public abstract class AbstractAutoProxyCreator extends ProxyProcessorSupport
 	@Override
 	public Object postProcessBeforeInstantiation(Class<?> beanClass, String beanName) {
 		Object cacheKey = getCacheKey(beanClass, beanName);
-
+		/**
+		 * targetSourcedBeans里不包含这个bean，这个Set里的是已经完成代理的
+		 * 一般是程序员自己写的代理实现，用spring默认的，会一直为0
+		 * 但是如果不在这个Set并且在advisedBeans（Map）里则是声明代理的类
+		 * 肯定不需要代理
+		 */
 		if (!StringUtils.hasLength(beanName) || !this.targetSourcedBeans.contains(beanName)) {
 			if (this.advisedBeans.containsKey(cacheKey)) {
 				return null;
 			}
+			/**
+			 * 如果当前bean继承了Advice | Pointcut | Advisor | AopInfrastructureBean
+			 * 或者被@Aspect注解则表明这个类是声明代理的类，肯定不需要代理
+			 * 存到advisedBeans中 shouldSkip()记录了当前Class是个切面类，后续在bean填充属性之前会解析，判断是否需要代理
+			 */
 			if (isInfrastructureClass(beanClass) || shouldSkip(beanClass, beanName)) {
 				this.advisedBeans.put(cacheKey, Boolean.FALSE);
 				return null;
@@ -257,6 +267,11 @@ public abstract class AbstractAutoProxyCreator extends ProxyProcessorSupport
 		// Create proxy here if we have a custom TargetSource.
 		// Suppresses unnecessary default instantiation of the target bean:
 		// The TargetSource will handle target instances in a custom fashion.
+		/**
+		 * 是否有代理实现
+		 * spring默认的这一步是没有的
+		 * 没有实现不做任何处理，直接返回null
+		 */
 		TargetSource targetSource = getCustomTargetSource(beanClass, beanName);
 		if (targetSource != null) {
 			if (StringUtils.hasLength(beanName)) {
@@ -315,10 +330,21 @@ public abstract class AbstractAutoProxyCreator extends ProxyProcessorSupport
 	 * @return the cache key for the given class and name
 	 */
 	protected Object getCacheKey(Class<?> beanClass, @Nullable String beanName) {
+		/**
+		 * beanName存在
+		 */
 		if (StringUtils.hasLength(beanName)) {
+			/**
+			 * FactoryBean则返回 &beanName
+			 * 负责返回beanName
+			 */
 			return (FactoryBean.class.isAssignableFrom(beanClass) ?
 					BeanFactory.FACTORY_BEAN_PREFIX + beanName : beanName);
 		}
+		/**
+		 * beanName不存在
+		 * 返回bean
+		 */
 		else {
 			return beanClass;
 		}
@@ -335,21 +361,41 @@ public abstract class AbstractAutoProxyCreator extends ProxyProcessorSupport
 		if (StringUtils.hasLength(beanName) && this.targetSourcedBeans.contains(beanName)) {
 			return bean;
 		}
+		/**
+		 * 所有都会存到里面
+		 * 只是需要代理的标记为true
+		 */
 		if (Boolean.FALSE.equals(this.advisedBeans.get(cacheKey))) {
 			return bean;
 		}
+		/**
+		 * 是切面的类，存入，返回
+		 */
 		if (isInfrastructureClass(bean.getClass()) || shouldSkip(bean.getClass(), beanName)) {
 			this.advisedBeans.put(cacheKey, Boolean.FALSE);
 			return bean;
 		}
 
 		// Create proxy if we have advice.
+		/**
+		 * 根据当前bean的类型和beanName来获取是否需要代理
+		 * 需要代理则进行代理 调用AbstractAdvisorAutoProxyCreator#getAdvicesAndAdvisorsForBean()
+		 */
 		Object[] specificInterceptors = getAdvicesAndAdvisorsForBean(bean.getClass(), beanName, null);
 		if (specificInterceptors != DO_NOT_PROXY) {
 			this.advisedBeans.put(cacheKey, Boolean.TRUE);
+			/**
+			 * 创建代理
+			 */
 			Object proxy = createProxy(
 					bean.getClass(), beanName, specificInterceptors, new SingletonTargetSource(bean));
+			/**
+			 * 存放代理
+			 */
 			this.proxyTypes.put(cacheKey, proxy.getClass());
+			/**
+			 * 返回代理
+			 */
 			return proxy;
 		}
 
@@ -370,6 +416,11 @@ public abstract class AbstractAutoProxyCreator extends ProxyProcessorSupport
 	 * @see #shouldSkip
 	 */
 	protected boolean isInfrastructureClass(Class<?> beanClass) {
+		/**
+		 * 当前实例的bean是否实现了
+		 * Advice | Pointcut | Advisor | AopInfrastructureBean
+		 * 实现这些表明这个类肯定不需要代理，因为它是声明代理的类
+		 */
 		boolean retVal = Advice.class.isAssignableFrom(beanClass) ||
 				Pointcut.class.isAssignableFrom(beanClass) ||
 				Advisor.class.isAssignableFrom(beanClass) ||

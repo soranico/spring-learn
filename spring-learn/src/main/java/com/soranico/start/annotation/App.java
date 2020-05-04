@@ -3,6 +3,8 @@ package com.soranico.start.annotation;
 import com.soranico.mybean.MyCustomBean;
 import com.soranico.myextend.factory.MyBeanDefinitionRegistryPostProcessor;
 import com.soranico.myextend.factory.MyBeanFactoryPostProcessor;
+import com.soranico.myfactoryBean.MyFactoryService;
+import com.soranico.service.MyService01;
 import com.soranico.start.annotation.config.AppConfig;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 
@@ -43,9 +45,12 @@ public class App {
 //		applicationContext.getBean(MyStaticBean.class);
 //		applicationContext.getBean(MyStaticBean.class);
 		applicationContext.getBean(MyCustomBean.class);
+		applicationContext.getBean(MyFactoryService.class);
 
 //		MyService service = applicationContext.getBean(MyService.class);
+		MyService01 service01 = applicationContext.getBean(MyService01.class);
 //
+		service01.service01();
 //		service.service01();
 	}
 

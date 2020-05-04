@@ -241,6 +241,10 @@ public abstract class AbstractBeanFactory extends FactoryBeanRegistrySupport imp
 		/**
 		 * 从单例池中获取，允许早期创建，在判断是否factoryBean是不允许早期创建的
 		 * 为什么那时候不能允许呢？ TODO 不懂
+		 * 为什么要取值呢？
+		 * 因为在applicationContext.getBean()的时候，如果需要的
+		 * bean不是懒加载的，则这步可以直接获取，如果是懒加载的
+		 * 则需要判断后进行实例化
 		 */
 		Object sharedInstance = getSingleton(beanName);
 		if (sharedInstance != null && args == null) {
@@ -267,7 +271,8 @@ public abstract class AbstractBeanFactory extends FactoryBeanRegistrySupport imp
 			// Check if bean definition exists in this factory.
 			/**
 			 * 检测当前bean是不是在父工厂中
-			 * TODO 不懂
+			 * 一般不会指定父工厂，以后有时间再看这部分吧
+			 * TODO 以后
 			 */
 			BeanFactory parentBeanFactory = getParentBeanFactory();
 			if (parentBeanFactory != null && !containsBeanDefinition(beanName)) {
@@ -313,7 +318,8 @@ public abstract class AbstractBeanFactory extends FactoryBeanRegistrySupport imp
 									"Circular depends-on relationship between '" + beanName + "' and '" + dep + "'");
 						}
 						/**
-						 * 注册依赖关系 TODO 测试
+						 * 注册依赖关系
+						 * TODO 测试
 						 */
 						registerDependentBean(dep, beanName);
 						try {
@@ -333,7 +339,11 @@ public abstract class AbstractBeanFactory extends FactoryBeanRegistrySupport imp
 				 * 实例bean
 				 */
 				if (mbd.isSingleton()) {
-
+					/**
+					 * getSingleton()完成了标记当前bean正在创建
+					 * DefaultSingletonBeanRegistry#beforeSingletonCreation()
+					 * 具体就是将当前beanName添加到singletonCurrentlyInCreation（Set）
+					 */
 					sharedInstance = getSingleton(beanName, () -> {
 						try {
 							/**
@@ -1195,12 +1205,12 @@ public abstract class AbstractBeanFactory extends FactoryBeanRegistrySupport imp
 	protected void registerCustomEditors(PropertyEditorRegistry registry) {
 		PropertyEditorRegistrySupport registrySupport =
 				(registry instanceof PropertyEditorRegistrySupport ? (PropertyEditorRegistrySupport) registry : null);
-		if (registrySupport != null) {
+		if (registrySupport != null) {//激活配置编辑器
 			registrySupport.useConfigValueEditors();
 		}
 		if (!this.propertyEditorRegistrars.isEmpty()) {
 			for (PropertyEditorRegistrar registrar : this.propertyEditorRegistrars) {
-				try {
+				try {// 给当前bean注册编辑器，用于解析配置
 					registrar.registerCustomEditors(registry);
 				} catch (BeanCreationException ex) {
 					Throwable rootCause = ex.getMostSpecificCause();

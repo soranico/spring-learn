@@ -16,19 +16,14 @@
 
 package org.springframework.util;
 
-import java.lang.reflect.Constructor;
-import java.lang.reflect.Field;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
-import java.lang.reflect.UndeclaredThrowableException;
+import org.springframework.lang.Nullable;
+
+import java.lang.reflect.*;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
-
-import org.springframework.lang.Nullable;
 
 /**
  * Simple utility class for working with the reflection API and handling
@@ -364,6 +359,9 @@ public abstract class ReflectionUtils {
 	 * @see #doWithMethods
 	 */
 	public static void doWithLocalMethods(Class<?> clazz, MethodCallback mc) {
+		/**
+		 * 获取当前类中所有方法，包括private
+		 */
 		Method[] methods = getDeclaredMethods(clazz);
 		for (Method method : methods) {
 			try {
@@ -689,6 +687,9 @@ public abstract class ReflectionUtils {
 	 * @see #doWithFields
 	 */
 	public static void doWithLocalFields(Class<?> clazz, FieldCallback fc) {
+		/**
+		 * 取出所有属性
+		 */
 		for (Field field : getDeclaredFields(clazz)) {
 			try {
 				fc.doWith(field);

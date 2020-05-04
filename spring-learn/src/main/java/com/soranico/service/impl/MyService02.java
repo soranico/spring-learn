@@ -23,4 +23,8 @@ import javax.annotation.Resource;
 public class MyService02 {
 	@Resource
 	private MyService01 myService01;
+
+	public void service02(){
+		System.err.println("MyService02  -- >service02()");
+	}
 }

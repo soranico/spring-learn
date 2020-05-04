@@ -16,19 +16,19 @@
 
 package org.springframework.aop.aspectj.annotation;
 
+import org.aspectj.lang.reflect.PerClauseKind;
+import org.springframework.aop.Advisor;
+import org.springframework.beans.factory.BeanFactoryUtils;
+import org.springframework.beans.factory.ListableBeanFactory;
+import org.springframework.beans.factory.support.RootBeanDefinition;
+import org.springframework.lang.Nullable;
+import org.springframework.util.Assert;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-
-import org.aspectj.lang.reflect.PerClauseKind;
-
-import org.springframework.aop.Advisor;
-import org.springframework.beans.factory.BeanFactoryUtils;
-import org.springframework.beans.factory.ListableBeanFactory;
-import org.springframework.lang.Nullable;
-import org.springframework.util.Assert;
 
 /**
  * Helper for retrieving @AspectJ beans from a BeanFactory and building
@@ -81,6 +81,10 @@ public class BeanFactoryAspectJAdvisorsBuilder {
 	 * @see #isEligibleBean
 	 */
 	public List<Advisor> buildAspectJAdvisors() {
+		/**
+		 * 在首次解析切面类的时候
+		 * 这个属性值一定为null
+		 */
 		List<String> aspectNames = this.aspectBeanNames;
 
 		if (aspectNames == null) {
@@ -89,6 +93,13 @@ public class BeanFactoryAspectJAdvisorsBuilder {
 				if (aspectNames == null) {
 					List<Advisor> advisors = new ArrayList<>();
 					aspectNames = new ArrayList<>();
+					/**
+					 * 取出所有beanName，为什么这个能取出所有的beanName，因此这个方法
+					 * 第一次调用是在创建bean的时候，工厂已经实例化完成，所有BeanDefinition
+					 * 也已经放进去了
+					 * 第一次调用是在准备实例化bean的时候，即第二次调用后置处理器
+					 * {@link org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory#resolveBeforeInstantiation(String, RootBeanDefinition)}
+					 */
 					String[] beanNames = BeanFactoryUtils.beanNamesForTypeIncludingAncestors(
 							this.beanFactory, Object.class, true, false);
 					for (String beanName : beanNames) {
@@ -101,16 +112,39 @@ public class BeanFactoryAspectJAdvisorsBuilder {
 						if (beanType == null) {
 							continue;
 						}
+						/**
+						 * 是否加了@Aspect注解
+						 */
 						if (this.advisorFactory.isAspect(beanType)) {
 							aspectNames.add(beanName);
 							AspectMetadata amd = new AspectMetadata(beanType, beanName);
+							/**
+							 * 切面类是否为singleton
+							 */
 							if (amd.getAjType().getPerClause().getKind() == PerClauseKind.SINGLETON) {
+								/**
+								 * 使用MetadataAwareAspectInstanceFactory封装，确保值实例化一次
+								 * 这是在下面那行代码里说的
+								 * TODO 测试
+								 * 为什么？
+								 */
 								MetadataAwareAspectInstanceFactory factory =
 										new BeanFactoryAspectInstanceFactory(this.beanFactory, beanName);
+								/**
+								 * 获取当前类的所有切点
+								 */
 								List<Advisor> classAdvisors = this.advisorFactory.getAdvisors(factory);
+								/**
+								 * 单例的话存到advisorsCache中
+								 * 以后根据beanName取出即可
+								 */
 								if (this.beanFactory.isSingleton(beanName)) {
 									this.advisorsCache.put(beanName, classAdvisors);
 								}
+								/**
+								 * 不是单例放到aspectFactoryCache中
+								 * 放的是解析切面类的工厂
+								 */
 								else {
 									this.aspectFactoryCache.put(beanName, factory);
 								}
@@ -129,21 +163,36 @@ public class BeanFactoryAspectJAdvisorsBuilder {
 							}
 						}
 					}
+					/**
+					 * 所有的切面类都已经解析
+					 * 存储切面类的name
+					 */
 					this.aspectBeanNames = aspectNames;
 					return advisors;
 				}
 			}
 		}
 
+		/**
+		 * 非首次，直接从缓存中取出切面类
+		 */
 		if (aspectNames.isEmpty()) {
 			return Collections.emptyList();
 		}
 		List<Advisor> advisors = new ArrayList<>();
 		for (String aspectName : aspectNames) {
+			/**
+			 * 从切面单例缓存中区
+			 */
 			List<Advisor> cachedAdvisors = this.advisorsCache.get(aspectName);
 			if (cachedAdvisors != null) {
 				advisors.addAll(cachedAdvisors);
 			}
+			/**
+			 * 不是singleton
+			 * 取出获取切点的工厂
+			 * 获取切面类的切面返回
+			 */
 			else {
 				MetadataAwareAspectInstanceFactory factory = this.aspectFactoryCache.get(aspectName);
 				advisors.addAll(this.advisorFactory.getAdvisors(factory));
