@@ -73,11 +73,12 @@ public abstract class AbstractAdvisorAutoProxyCreator extends AbstractAutoProxyC
 	protected Object[] getAdvicesAndAdvisorsForBean(
 			Class<?> beanClass, String beanName, @Nullable TargetSource targetSource) {
 		/**
-		 * 查找所有切面
+		 * 查找当前类可以使用匹配的切面
 		 * 没有的话表明不需要代理
+		 * 调用findEligibleAdvisors()
 		 */
 		List<Advisor> advisors = findEligibleAdvisors(beanClass, beanName);
-		if (advisors.isEmpty()) {
+		if (advisors.isEmpty()) { // 没有匹配的切面，则表明当前Class不需要代理
 			return DO_NOT_PROXY;
 		}
 		return advisors.toArray();
@@ -85,8 +86,9 @@ public abstract class AbstractAdvisorAutoProxyCreator extends AbstractAutoProxyC
 
 	/**
 	 * Find all eligible Advisors for auto-proxying this class.
+	 *
 	 * @param beanClass the clazz to find advisors for
-	 * @param beanName the name of the currently proxied bean
+	 * @param beanName  the name of the currently proxied bean
 	 * @return the empty List, not {@code null},
 	 * if there are no pointcuts or interceptors
 	 * @see #findCandidateAdvisors
@@ -96,10 +98,19 @@ public abstract class AbstractAdvisorAutoProxyCreator extends AbstractAutoProxyC
 	protected List<Advisor> findEligibleAdvisors(Class<?> beanClass, String beanName) {
 		/**
 		 * 查找所有的切点
+		 * 不管当前类能不能匹配
+		 * 都会查出来
+		 * {@link org.springframework.aop.aspectj.annotation.AnnotationAwareAspectJAutoProxyCreator#findCandidateAdvisors()}
 		 */
 		List<Advisor> candidateAdvisors = findCandidateAdvisors();
+		/**
+		 * 过滤可以在当前bean使用的
+		 */
 		List<Advisor> eligibleAdvisors = findAdvisorsThatCanApply(candidateAdvisors, beanClass, beanName);
 		extendAdvisors(eligibleAdvisors);
+		/**
+		 * 非空排序
+		 */
 		if (!eligibleAdvisors.isEmpty()) {
 			eligibleAdvisors = sortAdvisors(eligibleAdvisors);
 		}
@@ -108,33 +119,42 @@ public abstract class AbstractAdvisorAutoProxyCreator extends AbstractAutoProxyC
 
 	/**
 	 * Find all candidate Advisors to use in auto-proxying.
+	 *
 	 * @return the List of candidate Advisors
 	 */
 	protected List<Advisor> findCandidateAdvisors() {
 		Assert.state(this.advisorRetrievalHelper != null, "No BeanFactoryAdvisorRetrievalHelper available");
-		/**
-		 * 查找spring内部的切面，e.g 开启事务支持的时候，就会有事务的注解
-		 */
+
 		return this.advisorRetrievalHelper.findAdvisorBeans();
 	}
 
 	/**
 	 * Search the given candidate Advisors to find all Advisors that
 	 * can apply to the specified bean.
+	 *
 	 * @param candidateAdvisors the candidate Advisors
-	 * @param beanClass the target's bean class
-	 * @param beanName the target's bean name
+	 * @param beanClass         the target's bean class
+	 * @param beanName          the target's bean name
 	 * @return the List of applicable Advisors
 	 * @see ProxyCreationContext#getCurrentProxiedBeanName()
 	 */
 	protected List<Advisor> findAdvisorsThatCanApply(
 			List<Advisor> candidateAdvisors, Class<?> beanClass, String beanName) {
-
+		/**
+		 * 设置当前代理的beanName
+		 *
+		 */
 		ProxyCreationContext.setCurrentProxiedBeanName(beanName);
 		try {
+			/**
+			 * 调用{@link AopUtils#findAdvisorsThatCanApply(List, Class)}
+			 * 获取当前类匹配的切面
+			 */
 			return AopUtils.findAdvisorsThatCanApply(candidateAdvisors, beanClass);
-		}
-		finally {
+		} finally {
+			/**
+			 * 清空当前代理的bean
+			 */
 			ProxyCreationContext.setCurrentProxiedBeanName(null);
 		}
 	}
@@ -142,6 +162,7 @@ public abstract class AbstractAdvisorAutoProxyCreator extends AbstractAutoProxyC
 	/**
 	 * Return whether the Advisor bean with the given name is eligible
 	 * for proxying in the first place.
+	 *
 	 * @param beanName the name of the Advisor bean
 	 * @return whether the bean is eligible
 	 */
@@ -152,6 +173,7 @@ public abstract class AbstractAdvisorAutoProxyCreator extends AbstractAutoProxyC
 	/**
 	 * Sort advisors based on ordering. Subclasses may choose to override this
 	 * method to customize the sorting strategy.
+	 *
 	 * @param advisors the source List of Advisors
 	 * @return the sorted List of Advisors
 	 * @see org.springframework.core.Ordered
@@ -169,8 +191,9 @@ public abstract class AbstractAdvisorAutoProxyCreator extends AbstractAutoProxyC
 	 * <p>The default implementation is empty.
 	 * <p>Typically used to add Advisors that expose contextual information
 	 * required by some of the later advisors.
+	 *
 	 * @param candidateAdvisors the Advisors that have already been identified as
-	 * applying to a given bean
+	 *                          applying to a given bean
 	 */
 	protected void extendAdvisors(List<Advisor> candidateAdvisors) {
 	}

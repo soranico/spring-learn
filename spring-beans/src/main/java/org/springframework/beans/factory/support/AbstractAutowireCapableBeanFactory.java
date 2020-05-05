@@ -672,7 +672,7 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 		 */
 		if (targetType != null && !mbd.isSynthetic() && hasInstantiationAwareBeanPostProcessors()) {
 			/**
-			 * TODO 调用
+			 * TODO 第一次调用
 			 * 第一次调用bean后置处理器
 			 * 什么都没有做
 			 */
@@ -970,7 +970,7 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 		if (!mbd.isSynthetic() && hasInstantiationAwareBeanPostProcessors()) {
 			/**
 			 *
-			 * TODO 调用
+			 * TODO 第五次调用
 			 *
 			 * 第五次调用后置处理器，实现SmartInstantiationAwareBeanPostProcessor#getEarlyBeanReference()
 			 *
@@ -1114,7 +1114,7 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 	protected void applyMergedBeanDefinitionPostProcessors(RootBeanDefinition mbd, Class<?> beanType, String beanName) {
 		/**
 		 *
-		 * TODO 调用
+		 * TODO 第四次调用
 		 * 第四次调用beanPostProcessor
 		 *
 		 * 实现MergedBeanDefinitionPostProcessor , 调用postProcessMergedBeanDefinition
@@ -1392,7 +1392,7 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 		if (beanClass != null && hasInstantiationAwareBeanPostProcessors()) {
 			/**
 			 *
-			 * TODO 调用
+			 * TODO 第三次调用
 			 * 第三次调用后置处理器，调用实现SmartInstantiationBeanPostProcessor,此类继承InstantiationBeanPostProcessor
 			 * 调用方法determineCandidateConstructors()
 			 * AutowiredAnnotationBeanPostProcessor间接实现了

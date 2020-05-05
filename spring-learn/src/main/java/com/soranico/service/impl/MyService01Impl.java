@@ -1,9 +1,11 @@
 package com.soranico.service.impl;
 
+import com.soranico.myannotation.MyAnnotation;
 import com.soranico.service.MyService;
 import com.soranico.service.MyService01;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
@@ -24,6 +26,7 @@ import javax.annotation.Resource;
  * </pre>
  */
 @Service
+@Transactional
 public class MyService01Impl implements MyService01 {
 	@Autowired
 	private MyService02 myService02;
@@ -72,7 +75,12 @@ public class MyService01Impl implements MyService01 {
 	}
 
 	@Resource
-	private void test01(MyService02 defaultStr){
-		System.err.println("MyService01Impl defaultStr = "+defaultStr);
+	private void test01(MyService02 defaultStr) {
+		System.err.println("MyService01Impl defaultStr = " + defaultStr);
+	}
+
+	@MyAnnotation
+	public void service02() {
+		System.err.println("坚持吧");
 	}
 }

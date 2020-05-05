@@ -16,18 +16,17 @@
 
 package org.springframework.transaction.interceptor;
 
-import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-
 import org.springframework.aop.support.AopUtils;
 import org.springframework.core.MethodClassKey;
 import org.springframework.lang.Nullable;
 import org.springframework.util.ClassUtils;
+
+import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Abstract implementation of {@link TransactionAttributeSource} that caches
@@ -90,11 +89,19 @@ public abstract class AbstractFallbackTransactionAttributeSource implements Tran
 	@Override
 	@Nullable
 	public TransactionAttribute getTransactionAttribute(Method method, @Nullable Class<?> targetClass) {
+		/**
+		 * 前方法是Object的方法，直接返回null
+		 * 解析下一个方法
+		 */
 		if (method.getDeclaringClass() == Object.class) {
 			return null;
 		}
 
 		// First, see if we have a cached value.
+		/**
+		 *  封装为MethodClassKey,然后从缓存中查找，查到直接返回
+		 *  首次查不到，然后会放到缓存中
+		 */
 		Object cacheKey = getCacheKey(method, targetClass);
 		TransactionAttribute cached = this.attributeCache.get(cacheKey);
 		if (cached != null) {
@@ -108,7 +115,15 @@ public abstract class AbstractFallbackTransactionAttributeSource implements Tran
 			}
 		}
 		else {
-			// We need to work it out.
+			// We need to work it out. 缓存中不存在，解析注解
+			/**
+			 * 首次解析方法的注解
+			 * 这里表明了为什么@Transcational可以用于方法
+			 * 因为在method找不到，会去这个方法所属的类上找
+			 * 而使用@Apsect标记的切点注解@annotation只能标记方法
+			 * 因为AspectJ底层解析注解标记的代码直解析方法，找不到也不会去类上找
+			 *
+			 */
 			TransactionAttribute txAttr = computeTransactionAttribute(method, targetClass);
 			// Put it in the cache.
 			if (txAttr == null) {
@@ -116,12 +131,12 @@ public abstract class AbstractFallbackTransactionAttributeSource implements Tran
 			}
 			else {
 				String methodIdentification = ClassUtils.getQualifiedMethodName(method, targetClass);
-				if (txAttr instanceof DefaultTransactionAttribute) {
+				if (txAttr instanceof DefaultTransactionAttribute) {// 设置注释，为当前方法名com.soranico.service.impl.MyService01Impl.init
 					((DefaultTransactionAttribute) txAttr).setDescriptor(methodIdentification);
 				}
 				if (logger.isTraceEnabled()) {
 					logger.trace("Adding transactional method '" + methodIdentification + "' with attribute: " + txAttr);
-				}
+				}// 存到缓存
 				this.attributeCache.put(cacheKey, txAttr);
 			}
 			return txAttr;
@@ -149,23 +164,47 @@ public abstract class AbstractFallbackTransactionAttributeSource implements Tran
 	 */
 	@Nullable
 	protected TransactionAttribute computeTransactionAttribute(Method method, @Nullable Class<?> targetClass) {
-		// Don't allow no-public methods as required.
+		// Don't allow no-public methods as required. 是否只允许public method
+		/**
+		 *如果只允许public,并且当前method不为public
+		 * 直接返回null
+		 */
 		if (allowPublicMethodsOnly() && !Modifier.isPublic(method.getModifiers())) {
 			return null;
 		}
 
 		// The method may be on an interface, but we need attributes from the target class.
 		// If the target class is null, the method will be unchanged.
+		/**
+		 * 如果当前方法是接口的，那么获取实现类的
+		 * 如果实现类为null，不做任何改变
+		 */
 		Method specificMethod = AopUtils.getMostSpecificMethod(method, targetClass);
 
-		// First try is the method in the target class.
+		// First try is the method in the target class.  先尝试在方法上寻找@Transactional,找到直接返回
+		/**
+		 * 先在当前method上查找@Transactional
+		 * 找到返回
+		 * 调用的是{@link org.springframework.transaction.annotation.AnnotationTransactionAttributeSource#findTransactionAttribute(Method)}
+		 */
 		TransactionAttribute txAttr = findTransactionAttribute(specificMethod);
 		if (txAttr != null) {
 			return txAttr;
 		}
 
-		// Second try is the transaction attribute on the target class.
+		// Second try is the transaction attribute on the target class. 
+		/**
+		 * 方法上没有找到，在所属的类上查找
+		 * 调用{@link org.springframework.transaction.annotation.AnnotationTransactionAttributeSource#findTransactionAttribute(Class)}
+		 */
 		txAttr = findTransactionAttribute(specificMethod.getDeclaringClass());
+		/**
+		 *  找到如果是用户的类则返回
+		 *  用户类 ：方法不是synthetic&&所属的类名不为groovy.lang.GroovyObject
+		 *  或者method.isBridge()
+		 *  TODO 不懂
+		 *  一般会直接返回
+		 */
 		if (txAttr != null && ClassUtils.isUserLevelMethod(method)) {
 			return txAttr;
 		}

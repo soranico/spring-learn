@@ -20,7 +20,8 @@ import org.aspectj.lang.annotation.Aspect;
 @Aspect
 public class MyAspect {
 	@Around("execution(* com.soranico.service.impl.*.*(..))")
-	public void proxy(){
-		System.err.println("aspect");
+//	@Around("@annotation(com.soranico.myannotation.MyAnnotation)")
+	public void proxy() {
+		System.err.println("忆夏思乡");
 	}
 }

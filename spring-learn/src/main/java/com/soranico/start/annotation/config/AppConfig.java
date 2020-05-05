@@ -5,7 +5,6 @@ import com.soranico.mybean.MyCustomBean;
 import com.soranico.myfactoryBean.MyFactoryBean;
 import com.soranico.myproxy.MyAspect;
 import org.springframework.context.annotation.*;
-import org.springframework.transaction.annotation.EnableTransactionManagement;
 
 /**
  * <pre>
@@ -26,7 +25,7 @@ import org.springframework.transaction.annotation.EnableTransactionManagement;
 		"com.soranico.service.**.**"
 })
 @EnableAspectJAutoProxy
-@EnableTransactionManagement
+//@EnableTransactionManagement
 @Import({MyAspect.class, MyFactoryBean.class})
 //@Import({MyImport.class, MyImportSelector.class, MyImportBeanDefinitionRegistrar.class})
 public class AppConfig extends AppConfigParent implements AppConfigInterface {

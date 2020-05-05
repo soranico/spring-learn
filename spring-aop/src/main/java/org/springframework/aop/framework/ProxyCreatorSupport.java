@@ -16,10 +16,10 @@
 
 package org.springframework.aop.framework;
 
+import org.springframework.util.Assert;
+
 import java.util.LinkedList;
 import java.util.List;
-
-import org.springframework.util.Assert;
 
 /**
  * Base class for proxy factories.
@@ -102,6 +102,11 @@ public class ProxyCreatorSupport extends AdvisedSupport {
 		if (!this.active) {
 			activate();
 		}
+		/**
+		 * 获取aopProxyFactory即当前代理工厂
+		 * 调用{@link DefaultAopProxyFactory#createAopProxy(AdvisedSupport)}
+		 * 生成代理生成策略
+		 */
 		return getAopProxyFactory().createAopProxy(this);
 	}
 

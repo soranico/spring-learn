@@ -69,6 +69,7 @@ public class BeanFactoryAdvisorRetrievalHelper {
 		 * 开启事务管理的话
 		 * 这里会有事务的
 		 * org.springframework.transaction.config.internalTransactionAdvisor
+		 * {@link org.springframework.transaction.annotation.ProxyTransactionManagementConfiguration}
 		 * 没有的话会创建一个{}
 		 */
 		String[] advisorNames = this.cachedAdvisorBeanNames;
@@ -88,14 +89,22 @@ public class BeanFactoryAdvisorRetrievalHelper {
 
 		List<Advisor> advisors = new ArrayList<>();
 		for (String name : advisorNames) {
-			if (isEligibleBean(name)) {// 是否正在创建，因为事务的这个是通过@Bean添加的
+			if (isEligibleBean(name)) {
+				/**
+				 * 是否正在创建，因为spring的事务切面的这个是通过@Bean添加的
+				 * 这个是在实例化事务bean的时候才会满足
+				 */
 				if (this.beanFactory.isCurrentlyInCreation(name)) {
 					if (logger.isTraceEnabled()) {
 						logger.trace("Skipping currently created advisor '" + name + "'");
 					}
 				}
 				else {
-					try {// 实例化bean并放到集合中
+					try {
+						/**
+						 * 实例化bean放入
+						 * 如果bean没有实例，则会进行实例
+						 */
 						advisors.add(this.beanFactory.getBean(name, Advisor.class));
 					}
 					catch (BeanCreationException ex) {

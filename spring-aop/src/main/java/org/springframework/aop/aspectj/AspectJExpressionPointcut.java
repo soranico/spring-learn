@@ -16,33 +16,16 @@
 
 package org.springframework.aop.aspectj;
 
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.lang.reflect.Method;
-import java.lang.reflect.Proxy;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-
 import org.aopalliance.intercept.MethodInvocation;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.aspectj.weaver.AnnotatedElement;
+import org.aspectj.weaver.ResolvedType;
+import org.aspectj.weaver.Shadow;
 import org.aspectj.weaver.patterns.NamePattern;
 import org.aspectj.weaver.reflect.ReflectionWorld.ReflectionWorldException;
 import org.aspectj.weaver.reflect.ShadowMatchImpl;
-import org.aspectj.weaver.tools.ContextBasedMatcher;
-import org.aspectj.weaver.tools.FuzzyBoolean;
-import org.aspectj.weaver.tools.JoinPointMatch;
-import org.aspectj.weaver.tools.MatchingContext;
-import org.aspectj.weaver.tools.PointcutDesignatorHandler;
-import org.aspectj.weaver.tools.PointcutExpression;
-import org.aspectj.weaver.tools.PointcutParameter;
-import org.aspectj.weaver.tools.PointcutParser;
-import org.aspectj.weaver.tools.PointcutPrimitive;
-import org.aspectj.weaver.tools.ShadowMatch;
-
+import org.aspectj.weaver.tools.*;
 import org.springframework.aop.ClassFilter;
 import org.springframework.aop.IntroductionAwareMethodMatcher;
 import org.springframework.aop.MethodMatcher;
@@ -62,6 +45,16 @@ import org.springframework.util.Assert;
 import org.springframework.util.ClassUtils;
 import org.springframework.util.ObjectUtils;
 import org.springframework.util.StringUtils;
+
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.lang.reflect.Method;
+import java.lang.reflect.Proxy;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Spring {@link org.springframework.aop.Pointcut} implementation
@@ -291,7 +284,14 @@ public class AspectJExpressionPointcut extends AbstractExpressionPointcut
 
 	@Override
 	public boolean matches(Method method, Class<?> targetClass, boolean hasIntroductions) {
+		/**
+		 * 获取切点解析器，具体构建，以后有时间看一下
+		 * TODO 不懂
+		 */
 		obtainPointcutExpression();
+		/**
+		 * 获取匹配结果
+		 */
 		ShadowMatch shadowMatch = getTargetShadowMatch(method, targetClass);
 
 		// Special handling for this, target, @this, @target, @annotation
@@ -426,7 +426,15 @@ public class AspectJExpressionPointcut extends AbstractExpressionPointcut
 	}
 
 	private ShadowMatch getTargetShadowMatch(Method method, Class<?> targetClass) {
+		/**
+		 * 获取目标方法，好像什么也没有改变
+		 */
 		Method targetMethod = AopUtils.getMostSpecificMethod(method, targetClass);
+		/**
+		 * 方法所属不是接口
+		 * 接口的有时间测一下
+		 * TODO 测试
+		 */
 		if (targetMethod.getDeclaringClass().isInterface()) {
 			// Try to build the most specific interface possible for inherited methods to be
 			// considered for sub-interface matches as well, in particular for proxy classes.
@@ -444,6 +452,9 @@ public class AspectJExpressionPointcut extends AbstractExpressionPointcut
 				}
 			}
 		}
+		/**
+		 * 获取匹配结果
+		 */
 		return getShadowMatch(targetMethod, method);
 	}
 
@@ -458,7 +469,18 @@ public class AspectJExpressionPointcut extends AbstractExpressionPointcut
 				if (shadowMatch == null) {
 					Method methodToMatch = targetMethod;
 					try {
-						try {
+						try {// 是否匹配，调用的是AspectJ的匹配方法，以后找源码看一下吧
+							/**
+							 * 是否匹配，调用的是AspectJ的匹配方法
+							 * 调用{@link org.aspectj.weaver.internal.tools.PointcutExpressionImpl#matchesMethodExecution(Method)}
+							 *
+							 * 如果是解析@annotation则在{@link org.aspectj.weaver.patterns.AnnotationPointcut#matchInternal(Shadow)}
+							 * 这一步什么都没有做？最终调用了
+							 * {@link org.aspectj.weaver.patterns.ExactAnnotationTypePattern#matches(AnnotatedElement, ResolvedType[])}
+							 * 比对方法的注解和切点的注解是不是匹配，是就返回FuzzyBoolean.YES
+							 *
+							 *
+							 */
 							shadowMatch = obtainPointcutExpression().matchesMethodExecution(methodToMatch);
 						}
 						catch (ReflectionWorldException ex) {
@@ -499,7 +521,7 @@ public class AspectJExpressionPointcut extends AbstractExpressionPointcut
 						}
 					}
 					catch (Throwable ex) {
-						// Possibly AspectJ 1.8.10 encountering an invalid signature
+						// Possibly AspectJ 1.8.10 encountering an invalid signature TODO 不懂
 						logger.debug("PointcutExpression matching rejected target method", ex);
 						fallbackExpression = null;
 					}
@@ -510,6 +532,10 @@ public class AspectJExpressionPointcut extends AbstractExpressionPointcut
 						shadowMatch = new DefensiveShadowMatch(shadowMatch,
 								fallbackExpression.matchesMethodExecution(methodToMatch));
 					}
+
+					/**
+					 * 存到缓存
+					 */
 					this.shadowMatchCache.put(targetMethod, shadowMatch);
 				}
 			}

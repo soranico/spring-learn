@@ -16,8 +16,6 @@
 
 package org.springframework.aop.framework;
 
-import java.io.Closeable;
-
 import org.springframework.beans.factory.Aware;
 import org.springframework.beans.factory.BeanClassLoaderAware;
 import org.springframework.beans.factory.DisposableBean;
@@ -26,6 +24,8 @@ import org.springframework.core.Ordered;
 import org.springframework.lang.Nullable;
 import org.springframework.util.ClassUtils;
 import org.springframework.util.ObjectUtils;
+
+import java.io.Closeable;
 
 /**
  * Base class with common functionality for proxy processors, in particular
@@ -102,9 +102,30 @@ public class ProxyProcessorSupport extends ProxyConfig implements Ordered, BeanC
 	 * @param proxyFactory the ProxyFactory for the bean
 	 */
 	protected void evaluateProxyInterfaces(Class<?> beanClass, ProxyFactory proxyFactory) {
-		Class<?>[] targetInterfaces = ClassUtils.getAllInterfacesForClass(beanClass, getProxyClassLoader());
+		/**
+		 * 当前Class的所有实现的接口
+		 */
+		Class<?>[] targetInterfaces = ClassUtils.getAllInterfacesForClass(beanClass, getProxyClassLoader());// 获取需要代理的接口
 		boolean hasReasonableProxyInterface = false;
 		for (Class<?> ifc : targetInterfaces) {
+			/**
+			 *
+			 * 接口不是回调接口
+			 * InitializingBean | DisposableBean | Closeable
+			 * AutoCloseable | Aware(包括实现的子类)
+			 *
+			 * &
+			 *
+			 * 接口名不是这几个
+			 * groovy.lang.GroovyObject | .cglib.proxy.Factory(结尾) | .bytebuddy.MockAccess(结尾)
+			 *
+			 *  &
+			 *
+			 * 至少有一个方法
+			 *
+			 * 如果有个接口满足这三个条件则表明找到了一个合理的代理接口
+			 *
+			 */
 			if (!isConfigurationCallbackInterface(ifc) && !isInternalLanguageInterface(ifc) &&
 					ifc.getMethods().length > 0) {
 				hasReasonableProxyInterface = true;
@@ -113,6 +134,10 @@ public class ProxyProcessorSupport extends ProxyConfig implements Ordered, BeanC
 		}
 		if (hasReasonableProxyInterface) {
 			// Must allow for introductions; can't just set interfaces to the target's interfaces only.
+			/**
+			 * 设置需要代理实现的接口
+			 * 基于jdk动态代理
+			 */
 			for (Class<?> ifc : targetInterfaces) {
 				proxyFactory.addInterface(ifc);
 			}

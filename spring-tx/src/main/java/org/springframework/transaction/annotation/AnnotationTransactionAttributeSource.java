@@ -16,6 +16,12 @@
 
 package org.springframework.transaction.annotation;
 
+import org.springframework.lang.Nullable;
+import org.springframework.transaction.interceptor.AbstractFallbackTransactionAttributeSource;
+import org.springframework.transaction.interceptor.TransactionAttribute;
+import org.springframework.util.Assert;
+import org.springframework.util.ClassUtils;
+
 import java.io.Serializable;
 import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Method;
@@ -23,12 +29,6 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.Set;
-
-import org.springframework.lang.Nullable;
-import org.springframework.transaction.interceptor.AbstractFallbackTransactionAttributeSource;
-import org.springframework.transaction.interceptor.TransactionAttribute;
-import org.springframework.util.Assert;
-import org.springframework.util.ClassUtils;
 
 /**
  * Implementation of the
@@ -146,6 +146,9 @@ public class AnnotationTransactionAttributeSource extends AbstractFallbackTransa
 	@Override
 	@Nullable
 	protected TransactionAttribute findTransactionAttribute(Method method) {
+		/**
+		 * 获取是否被注解标记
+		 */
 		return determineTransactionAttribute(method);
 	}
 
@@ -162,6 +165,9 @@ public class AnnotationTransactionAttributeSource extends AbstractFallbackTransa
 	@Nullable
 	protected TransactionAttribute determineTransactionAttribute(AnnotatedElement element) {
 		for (TransactionAnnotationParser annotationParser : this.annotationParsers) {
+			/**
+			 * 调用的是{@link SpringTransactionAnnotationParser#parseTransactionAnnotation(AnnotatedElement)}
+			 */
 			TransactionAttribute attr = annotationParser.parseTransactionAnnotation(element);
 			if (attr != null) {
 				return attr;

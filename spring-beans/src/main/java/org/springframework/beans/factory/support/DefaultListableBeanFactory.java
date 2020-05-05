@@ -883,7 +883,7 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
 			 */
 			if (!bd.isAbstract() && bd.isSingleton() && !bd.isLazyInit()) {
 				/**
-				 * TODO 调用
+				 * TODO 第一次调用
 				 * isFactoryBean第一次调用beanPostProcessor
 				 * 链路 isFactoryBean - > {@link AbstractBeanFactory#isFactoryBean(String)} 
 				 * ->{@link AbstractBeanFactory#isFactoryBean(String, RootBeanDefinition)}

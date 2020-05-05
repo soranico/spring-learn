@@ -16,14 +16,14 @@
 
 package org.springframework.transaction.interceptor;
 
-import java.io.Serializable;
-import java.lang.reflect.Method;
-
 import org.springframework.aop.support.StaticMethodMatcherPointcut;
 import org.springframework.dao.support.PersistenceExceptionTranslator;
 import org.springframework.lang.Nullable;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.util.ObjectUtils;
+
+import java.io.Serializable;
+import java.lang.reflect.Method;
 
 /**
  * Inner class that implements a Pointcut that matches if the underlying
@@ -37,12 +37,26 @@ abstract class TransactionAttributeSourcePointcut extends StaticMethodMatcherPoi
 
 	@Override
 	public boolean matches(Method method, Class<?> targetClass) {
+		// 事务切点，如果解析类是这几个类，则不进行事务管理
+		/**
+		 * 如果当前类实现了这几个接口中任意一个不进行事务管理
+		 * TransactionalProxy
+		 * PlatformTransactionManager有个实现类DataSourceTransactionManager，就是经常用的数据库事务管理器
+		 * PersistenceExceptionTranslator
+		 */
 		if (TransactionalProxy.class.isAssignableFrom(targetClass) ||
 				PlatformTransactionManager.class.isAssignableFrom(targetClass) ||
 				PersistenceExceptionTranslator.class.isAssignableFrom(targetClass)) {
 			return false;
-		}
+		}// 事务属性源
+		/**
+		 * 获取事务源
+		 */
 		TransactionAttributeSource tas = getTransactionAttributeSource();
+		/**
+		 * 实际调用{@link org.springframework.transaction.annotation.AnnotationTransactionAttributeSource#getTransactionAttribute(Method, Class)}
+		 * 这个方法在AbstractFallbackTransactionAttributeSource中，是AnnotationTransactionAttributeSource的父类
+		 */
 		return (tas == null || tas.getTransactionAttribute(method, targetClass) != null);
 	}
 

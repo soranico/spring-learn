@@ -14,10 +14,8 @@ package com.soranico.service;
  *
  * </pre>
  */
-public interface MyService01 {
+public interface MyService03 {
 
-	void service01();
 
-	void service02();
-
+	void test01();
 }

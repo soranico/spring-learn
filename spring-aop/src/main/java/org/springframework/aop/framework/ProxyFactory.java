@@ -17,7 +17,6 @@
 package org.springframework.aop.framework;
 
 import org.aopalliance.intercept.Interceptor;
-
 import org.springframework.aop.TargetSource;
 import org.springframework.lang.Nullable;
 import org.springframework.util.ClassUtils;
@@ -107,6 +106,10 @@ public class ProxyFactory extends ProxyCreatorSupport {
 	 * @return the proxy object
 	 */
 	public Object getProxy(@Nullable ClassLoader classLoader) {
+		/**
+		 * createAopProxy()
+		 * 实例代理策略，cglib | jdk
+		 */
 		return createAopProxy().getProxy(classLoader);
 	}
 
