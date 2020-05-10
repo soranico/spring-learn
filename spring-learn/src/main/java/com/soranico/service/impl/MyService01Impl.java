@@ -3,6 +3,7 @@ package com.soranico.service.impl;
 import com.soranico.myannotation.MyAnnotation;
 import com.soranico.service.MyService;
 import com.soranico.service.MyService01;
+import com.soranico.service.MyServiceMap;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -10,6 +11,8 @@ import org.springframework.transaction.annotation.Transactional;
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
 import javax.annotation.Resource;
+import java.util.List;
+import java.util.Map;
 
 /**
  * <pre>
@@ -33,6 +36,13 @@ public class MyService01Impl implements MyService01 {
 
 	@Resource
 	private MyService myService;
+
+	@Autowired
+	private Map<String ,MyServiceMap> myServiceMap;
+	@Autowired
+	private List<MyServiceMap> myServiceMaps;
+	@Autowired
+	private MyServiceMap[] myServiceMapArray;
 
 	/**
 	 * 默认构造器

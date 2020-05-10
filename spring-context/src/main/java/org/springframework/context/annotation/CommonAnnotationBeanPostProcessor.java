@@ -27,6 +27,7 @@ import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.beans.factory.annotation.InitDestroyAnnotationBeanPostProcessor;
 import org.springframework.beans.factory.annotation.InjectionMetadata;
 import org.springframework.beans.factory.config.*;
+import org.springframework.beans.factory.support.DefaultListableBeanFactory;
 import org.springframework.beans.factory.support.RootBeanDefinition;
 import org.springframework.core.BridgeMethodResolver;
 import org.springframework.core.MethodParameter;
@@ -309,8 +310,15 @@ public class CommonAnnotationBeanPostProcessor extends InitDestroyAnnotationBean
 
 	@Override
 	public PropertyValues postProcessProperties(PropertyValues pvs, Object bean, String beanName) {
+		/**
+		 * 获取需要注入的属性
+		 */
 		InjectionMetadata metadata = findResourceMetadata(beanName, bean.getClass(), pvs);
 		try {
+			/**
+			 * 进行属性注册
+			 * {@link InjectionMetadata#inject(Object, String, PropertyValues)}
+			 */
 			metadata.inject(bean, beanName, pvs);
 		}
 		catch (Throwable ex) {
@@ -328,7 +336,7 @@ public class CommonAnnotationBeanPostProcessor extends InitDestroyAnnotationBean
 	}
 
 	/**
-	 * 解析@Resource
+	 * 获取需要注入的属性
 	 * @param beanName
 	 * @param clazz
 	 * @param pvs
@@ -508,9 +516,15 @@ public class CommonAnnotationBeanPostProcessor extends InitDestroyAnnotationBean
 	protected Object getResource(LookupElement element, @Nullable String requestingBeanName)
 			throws NoSuchBeanDefinitionException {
 
+		/**
+		 *  TODO 不懂
+		 */
 		if (StringUtils.hasLength(element.mappedName)) {
 			return this.jndiFactory.getBean(element.mappedName, element.lookupType);
 		}
+		/**
+		 * TODO 不懂
+		 */
 		if (this.alwaysUseJndiLookup) {
 			return this.jndiFactory.getBean(element.name, element.lookupType);
 		}
@@ -518,6 +532,9 @@ public class CommonAnnotationBeanPostProcessor extends InitDestroyAnnotationBean
 			throw new NoSuchBeanDefinitionException(element.lookupType,
 					"No resource factory configured - specify the 'resourceFactory' property");
 		}
+		/**
+		 * 注入值
+		 */
 		return autowireResource(this.resourceFactory, element, requestingBeanName);
 	}
 
@@ -539,9 +556,19 @@ public class CommonAnnotationBeanPostProcessor extends InitDestroyAnnotationBean
 
 		if (factory instanceof AutowireCapableBeanFactory) {
 			AutowireCapableBeanFactory beanFactory = (AutowireCapableBeanFactory) factory;
+			/**
+			 * 获取依赖描述
+			 */
 			DependencyDescriptor descriptor = element.getDependencyDescriptor();
+			/**
+			 * 是否包含注入属性的BeanDefinition
+			 */
 			if (this.fallbackToDefaultTypeMatch && element.isDefaultName && !factory.containsBean(name)) {
 				autowiredBeanNames = new LinkedHashSet<>();
+				/**
+				 * 获取依赖的值
+				 * {@link DefaultListableBeanFactory#resolveDependency(org.springframework.beans.factory.config.DependencyDescriptor, java.lang.String, java.util.Set, org.springframework.beans.TypeConverter)}
+				 */
 				resource = beanFactory.resolveDependency(descriptor, requestingBeanName, autowiredBeanNames, null);
 				if (resource == null) {
 					throw new NoSuchBeanDefinitionException(element.getLookupType(), "No resolvable resource object");
@@ -657,6 +684,11 @@ public class CommonAnnotationBeanPostProcessor extends InitDestroyAnnotationBean
 
 		@Override
 		protected Object getResourceToInject(Object target, @Nullable String requestingBeanName) {
+			/**
+			 * 是否懒加载 以后再看
+			 *
+			 * 非懒加载进入getResource()
+			 */
 			return (this.lazyLookup ? buildLazyResourceProxy(this, requestingBeanName) :
 					getResource(this, requestingBeanName));
 		}

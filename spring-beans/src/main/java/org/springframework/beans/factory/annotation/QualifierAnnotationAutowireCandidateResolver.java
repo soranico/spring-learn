@@ -16,13 +16,6 @@
 
 package org.springframework.beans.factory.annotation;
 
-import java.lang.annotation.Annotation;
-import java.lang.reflect.AnnotatedElement;
-import java.lang.reflect.Method;
-import java.util.LinkedHashSet;
-import java.util.Map;
-import java.util.Set;
-
 import org.springframework.beans.SimpleTypeConverter;
 import org.springframework.beans.TypeConverter;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
@@ -41,6 +34,13 @@ import org.springframework.util.Assert;
 import org.springframework.util.ClassUtils;
 import org.springframework.util.ObjectUtils;
 import org.springframework.util.StringUtils;
+
+import java.lang.annotation.Annotation;
+import java.lang.reflect.AnnotatedElement;
+import java.lang.reflect.Method;
+import java.util.LinkedHashSet;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * {@link AutowireCandidateResolver} implementation that matches bean definition qualifiers
@@ -146,7 +146,7 @@ public class QualifierAnnotationAutowireCandidateResolver extends GenericTypeAwa
 	public boolean isAutowireCandidate(BeanDefinitionHolder bdHolder, DependencyDescriptor descriptor) {
 		boolean match = super.isAutowireCandidate(bdHolder, descriptor);
 		if (match) {
-			match = checkQualifiers(bdHolder, descriptor.getAnnotations());
+			match = checkQualifiers(bdHolder, descriptor.getAnnotations());// 获取属性的注解
 			if (match) {
 				MethodParameter methodParam = descriptor.getMethodParameter();
 				if (methodParam != null) {
@@ -172,7 +172,7 @@ public class QualifierAnnotationAutowireCandidateResolver extends GenericTypeAwa
 			Class<? extends Annotation> type = annotation.annotationType();
 			boolean checkMeta = true;
 			boolean fallbackToMeta = false;
-			if (isQualifier(type)) {
+			if (isQualifier(type)) { // 是否为Qualifier
 				if (!checkQualifier(bdHolder, annotation, typeConverter)) {
 					fallbackToMeta = true;
 				}
@@ -184,7 +184,7 @@ public class QualifierAnnotationAutowireCandidateResolver extends GenericTypeAwa
 				boolean foundMeta = false;
 				for (Annotation metaAnn : type.getAnnotations()) {
 					Class<? extends Annotation> metaType = metaAnn.annotationType();
-					if (isQualifier(metaType)) {
+ 					if (isQualifier(metaType)) {
 						foundMeta = true;
 						// Only accept fallback match if @Qualifier annotation has a value...
 						// Otherwise it is just a marker for a custom qualifier annotation.

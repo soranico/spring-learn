@@ -261,6 +261,14 @@ public abstract class AbstractAutoProxyCreator extends ProxyProcessorSupport
 			 * 如果当前bean继承了Advice | Pointcut | Advisor | AopInfrastructureBean
 			 * 或者被@Aspect注解则表明这个类是声明代理的类，肯定不需要代理
 			 * 存到advisedBeans中 shouldSkip()记录了当前Class是个切面类，后续在bean填充属性之前会解析，判断是否需要代理
+			 *
+			 * 注意: 如果当前类不是切面类会进入shouldSkip()
+			 * 这个方法会完成解析@Aspect和事务的解析
+			 * 只是解析属性，并没有进行匹配代理，因为当前还没有bean
+			 * {@link org.springframework.aop.aspectj.autoproxy.AspectJAwareAdvisorAutoProxyCreator#shouldSkip(Class, String)}
+			 * 事务的会在解析的时候就生成bean放进singletonObjects
+			 * 而用户的不会在这一步生成bean
+			 *
 			 */
 			if (isInfrastructureClass(beanClass) || shouldSkip(beanClass, beanName)) {
 				this.advisedBeans.put(cacheKey, Boolean.FALSE);

@@ -63,7 +63,8 @@ public class InjectionMetadata {
 
 
 	/**
-	 *注册@Resouce标记的属性和方法
+	 * 注册@Resouce标记的属性和方法
+	 *
 	 * @param beanDefinition
 	 */
 	public void checkConfigMembers(RootBeanDefinition beanDefinition) {
@@ -81,15 +82,40 @@ public class InjectionMetadata {
 		this.checkedElements = checkedElements;
 	}
 
+	/**
+	 * 属性注入
+	 *
+	 * @param target   需要注入属性的Class
+	 * @param beanName 需要注入属性的beanName
+	 * @param pvs      手动添加的属性值
+	 * @throws Throwable
+	 */
 	public void inject(Object target, @Nullable String beanName, @Nullable PropertyValues pvs) throws Throwable {
 		Collection<InjectedElement> checkedElements = this.checkedElements;
+		/**
+		 * 需要注入的属性
+		 */
 		Collection<InjectedElement> elementsToIterate =
 				(checkedElements != null ? checkedElements : this.injectedElements);
 		if (!elementsToIterate.isEmpty()) {
+			/**
+			 * 迭代注入属性
+			 */
 			for (InjectedElement element : elementsToIterate) {
 				if (logger.isTraceEnabled()) {
 					logger.trace("Processing injected element of bean '" + beanName + "': " + element);
 				}
+				/**
+				 * target , beanName : 当前正在注入属性的bean
+				 * element：需要往当前注入属性值的那个属性
+				 * Class A{
+				 *     Class B
+				 * }
+				 * 当前实例A
+				 * 则 element 为 B
+				 * target , beanName 为 A
+				 * {@link InjectedElement#inject(Object, String, PropertyValues)}
+				 */
 				element.inject(target, beanName, pvs);
 			}
 		}
@@ -97,6 +123,7 @@ public class InjectionMetadata {
 
 	/**
 	 * Clear property skipping for the contained elements.
+	 *
 	 * @since 3.2.13
 	 */
 	public void clear(@Nullable PropertyValues pvs) {
@@ -144,11 +171,9 @@ public class InjectionMetadata {
 		protected final Class<?> getResourceType() {
 			if (this.isField) {
 				return ((Field) this.member).getType();
-			}
-			else if (this.pd != null) {
+			} else if (this.pd != null) {
 				return this.pd.getPropertyType();
-			}
-			else {
+			} else {
 				return ((Method) this.member).getParameterTypes()[0];
 			}
 		}
@@ -160,8 +185,7 @@ public class InjectionMetadata {
 					throw new IllegalStateException("Specified field type [" + fieldType +
 							"] is incompatible with resource type [" + resourceType.getName() + "]");
 				}
-			}
-			else {
+			} else {
 				Class<?> paramType =
 						(this.pd != null ? this.pd.getPropertyType() : ((Method) this.member).getParameterTypes()[0]);
 				if (!(resourceType.isAssignableFrom(paramType) || paramType.isAssignableFrom(resourceType))) {
@@ -173,16 +197,29 @@ public class InjectionMetadata {
 
 		/**
 		 * Either this or {@link #getResourceToInject} needs to be overridden.
+		 * 为当前属性或方法参数注入值
 		 */
 		protected void inject(Object target, @Nullable String requestingBeanName, @Nullable PropertyValues pvs)
 				throws Throwable {
-
+			/**
+			 * 是否属性
+			 */
 			if (this.isField) {
 				Field field = (Field) this.member;
+				/**
+				 * 设置属性可见性
+				 * 反射知识
+				 */
 				ReflectionUtils.makeAccessible(field);
+				/**
+				 * 调用jdk的Filed设置属性值
+				 * getResourceToInject()：获取注入属性的值
+				 * 获取的是bean
+				 *
+				 * {@link org.springframework.context.annotation.CommonAnnotationBeanPostProcessor.ResourceElement#getResourceToInject(java.lang.Object, java.lang.String)}
+				 */
 				field.set(target, getResourceToInject(target, requestingBeanName));
-			}
-			else {
+			} else {
 				if (checkPropertySkipping(pvs)) {
 					return;
 				}
@@ -190,8 +227,7 @@ public class InjectionMetadata {
 					Method method = (Method) this.member;
 					ReflectionUtils.makeAccessible(method);
 					method.invoke(target, getResourceToInject(target, requestingBeanName));
-				}
-				catch (InvocationTargetException ex) {
+				} catch (InvocationTargetException ex) {
 					throw ex.getTargetException();
 				}
 			}
@@ -221,8 +257,7 @@ public class InjectionMetadata {
 						// Explicit value provided as part of the bean definition.
 						this.skip = true;
 						return true;
-					}
-					else if (pvs instanceof MutablePropertyValues) {
+					} else if (pvs instanceof MutablePropertyValues) {
 						((MutablePropertyValues) pvs).registerProcessedProperty(this.pd.getName());
 					}
 				}
@@ -233,6 +268,7 @@ public class InjectionMetadata {
 
 		/**
 		 * Clear property skipping for this element.
+		 *
 		 * @since 3.2.13
 		 */
 		protected void clearPropertySkipping(@Nullable PropertyValues pvs) {

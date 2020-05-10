@@ -594,14 +594,8 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 						"' to allow for resolving potential circular references");
 			}
 			/**
-			 *
-			 * 调用后置处理器
-			 *
-			 *
-			 *
-			 *
-			 *
-			 *
+			 * 添加bean的实例工厂
+			 * 在创建bean的时候使用{@link DefaultSingletonBeanRegistry#addSingletonFactory(String, ObjectFactory)}
 			 *
 			 */
 			addSingletonFactory(beanName, () -> getEarlyBeanReference(beanName, mbd, bean));
@@ -610,6 +604,9 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 		// Initialize the bean instance.
 		Object exposedObject = bean;
 		try {
+			/**
+			 * 填充bean的属性
+			 */
 			populateBean(beanName, mbd, instanceWrapper);
 			exposedObject = initializeBean(beanName, exposedObject, mbd);
 		} catch (Throwable ex) {
@@ -970,19 +967,28 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 		if (!mbd.isSynthetic() && hasInstantiationAwareBeanPostProcessors()) {
 			/**
 			 *
-			 * TODO 第五次调用
+			 * TODO 调用后置处理器
 			 *
-			 * 第五次调用后置处理器，实现SmartInstantiationAwareBeanPostProcessor#getEarlyBeanReference()
+			 * 第x次调用后置处理器，实现SmartInstantiationAwareBeanPostProcessor#getEarlyBeanReference()
 			 *
 			 * 1.AutowiredAnnotationBeanPostProcessor 间接实现 什么没有做
 			 *
 			 * 2.ImportAwareBeanPostProcessor 间接实现  什么都没有做
 			 *
 			 * 3.AnnotationAwareAspectJAutoProxyCreator 间接实现 （动态代理开启）
+			 * 这一步spring会判断是否需要代理当前bean
 			 *
+			 * 事务开启：会检查@Transactional是否被方法标记，具体就是拿出当前类以及实现
+			 * 的接口的方法是否被注解标记，如果方法上找不到的话spring会去获取当前方法所属的
+			 * Class,去看类上有没有被标记。
 			 *
+			 * 切面(@Aspect): 这种解析借用AspectJ的解析技术，所以在使用切面的时候才需要引入
+			 * AspectJ的支持,AspectJ在解析@annotation的时候只会解析传入的实体，spring传入的
+			 * 是method有没有被标记，没有标记也不会主动去检查method所属的Class是否被标记，所以
+			 * 注解无法支持Class
 			 *
-			 *
+			 * spring的切面和事务是在第一次调用BeanPostProcessor的时候解析出来的
+			 * 然后存到了
 			 *
 			 *
 			 */
@@ -1517,6 +1523,23 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 		// Give any InstantiationAwareBeanPostProcessors the opportunity to modify the
 		// state of the bean before properties are set. This can be used, for example,
 		// to support styles of field injection.
+		/**
+		 * TODO 第五次调用后置处理器
+		 * 调用InstantiationAwareBeanPostProcessor#postProcessAfterInstantiation()
+		 *
+		 * 这次调用的时候bean已经创建了，但是属性还没有填充
+		 * spring提供这个接口是为了在属性填充之前，用户是否
+		 * 需要修改bean的内容，spring内部默认没有做什么
+		 *
+		 * 1.CommonAnnotationBeanPostProcessor 实现 什么都没有做
+		 *
+		 * 2.AutowiredAnnotationBeanPostProcessor 间接实现 什么都没有做
+		 *
+		 * 3.ImportAwareBeanPostProcessor 间接实现 什么都没有做
+		 *
+		 * 4.AnnotationAwareAspectJAutoProxyCreator 间接实现 什么都没有做
+		 *
+		 */
 		if (!mbd.isSynthetic() && hasInstantiationAwareBeanPostProcessors()) {
 			for (BeanPostProcessor bp : getBeanPostProcessors()) {
 				if (bp instanceof InstantiationAwareBeanPostProcessor) {
@@ -1527,10 +1550,29 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 				}
 			}
 		}
-
+		/**
+		 *
+		 * 是否手动注入属性
+		 * e.g mybatis在创建BeanDefinition的时候就填充了属性
+		 *
+		 */
 		PropertyValues pvs = (mbd.hasPropertyValues() ? mbd.getPropertyValues() : null);
-
+		//
+		/**
+		 *
+		 * 获取注入模型 是注入模型和注入方式没有任何关系
+		 * spring默认是AUTOWIRE_NO，mybatis修改自己的BeanDefinition为AUTOWIRE_BY_TYPE
+		 *
+		 */
 		int resolvedAutowireMode = mbd.getResolvedAutowireMode();
+		/**
+		 *
+		 * 注入模型为 beanName || beanType
+		 * mybatis会执行这段
+		 * spring默认的不会执行
+		 * 由此可见注入方式和注入模型没有任何关系
+		 *
+		 */
 		if (resolvedAutowireMode == AUTOWIRE_BY_NAME || resolvedAutowireMode == AUTOWIRE_BY_TYPE) {
 			MutablePropertyValues newPvs = new MutablePropertyValues(pvs);
 			// Add property values based on autowire by name if applicable.
@@ -1543,15 +1585,69 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 			}
 			pvs = newPvs;
 		}
-
+		/**
+		 *
+		 * 后置处理器中是否有继承InstantiationBeanPostProcessor的
+		 * 肯定有
+		 *
+		 */
 		boolean hasInstAwareBpps = hasInstantiationAwareBeanPostProcessors();
-		boolean needsDepCheck = (mbd.getDependencyCheck() != AbstractBeanDefinition.DEPENDENCY_CHECK_NONE);
+		/**
+		 *
+		 * 是否需要依赖检查
+		 * TODO 不懂
+		 *
+		 */
+		boolean needsDepCheck = (mbd.getDependencyCheck() != AbstractBeanDefinition.DEPENDENCY_CHECK_NONE);// 依赖检查
 
 		PropertyDescriptor[] filteredPds = null;
 		if (hasInstAwareBpps) {
+			/**
+			 *
+			 * 这里为什么需要再次获取
+			 * 因为之前按照byName | byType的时候
+			 * 可能注入了其他的属性
+			 *
+			 */
 			if (pvs == null) {
 				pvs = mbd.getPropertyValues();
 			}
+
+			/**
+			 *
+			 * TODO 第六次调用后置处理器
+			 *
+			 * 执行InstantiationAwareBeanPostProcessor#postProcessProperties()
+			 *
+			 * 1.CommonAnnotationBeanPostProcessor
+			 * {@link org.springframework.context.annotation.CommonAnnotationBeanPostProcessor#postProcessProperties(org.springframework.beans.PropertyValues, java.lang.Object, java.lang.String)#}
+			 * 完成值注入
+			 *
+			 *
+			 *
+			 *
+			 * 2.AutowiredAnnotationBeanPostProcessor 间接实现 什么都没有做
+			 *
+			 *
+			 *
+			 *
+			 *
+			 * 3.ImportAwareBeanPostProcessor
+			 * 完成对@Configuration标记的配置代理类的beanFactory的值注入
+			 * {@link org.springframework.context.annotation.ConfigurationClassPostProcessor.ImportAwareBeanPostProcessor#postProcessProperties(org.springframework.beans.PropertyValues, java.lang.Object, java.lang.String)}
+			 *
+			 *
+			 *
+			 *
+			 *
+			 * 4.AnnotationAwareAspectJAutoProxyCreator 间接实现 什么都没有做
+			 *
+			 *
+			 *
+			 *
+			 *
+			 *
+			 */
 			for (BeanPostProcessor bp : getBeanPostProcessors()) {
 				if (bp instanceof InstantiationAwareBeanPostProcessor) {
 					InstantiationAwareBeanPostProcessor ibp = (InstantiationAwareBeanPostProcessor) bp;

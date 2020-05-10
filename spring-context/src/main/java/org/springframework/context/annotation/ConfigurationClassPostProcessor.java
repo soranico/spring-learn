@@ -563,6 +563,13 @@ public class ConfigurationClassPostProcessor implements BeanDefinitionRegistryPo
 		public PropertyValues postProcessProperties(@Nullable PropertyValues pvs, Object bean, String beanName) {
 			// Inject the BeanFactory before AutowiredAnnotationBeanPostProcessor's
 			// postProcessProperties method attempts to autowire other configuration beans.
+			/**
+			 * 之前在解析配置类的时候说过@Configuration会被标记full
+			 * 然后进行代理，在生成代理类的时候，spring添加了一个属性
+			 * $$beanFactory 以用来判断@Bean是否需要重新实例化
+			 * {@link org.springframework.context.annotation.ConfigurationClassEnhancer.BeanFactoryAwareGeneratorStrategy#transform(org.springframework.cglib.core.ClassGenerator)}
+			 *
+			 */
 			if (bean instanceof EnhancedConfiguration) {
 				((EnhancedConfiguration) bean).setBeanFactory(this.beanFactory);
 			}
