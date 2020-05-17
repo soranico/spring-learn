@@ -1321,6 +1321,8 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
 			 * ApplicationContext | ResourceLoader | ApplicationEventPublisher | ApplicationContext
 			 * 它们是在准备beanFactory的时候注册进来的 {@link org.springframework.context.support.AbstractApplicationContext#prepareBeanFactory(org.springframework.beans.factory.config.ConfigurableListableBeanFactory)}
 			 *
+			 * 下面找到唯一匹配的时候会进行代理,那这一步呢？会进行代理吗？如果是多类型匹配的
+			 * TODO 重要
 			 *
 			 *
 			 */
@@ -1354,7 +1356,13 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
 			} else {
 				// We have exactly one match.
 				Map.Entry<String, Object> entry = matchingBeans.entrySet().iterator().next();
+				/**
+				 * 注入属性的beanName
+				 */
 				autowiredBeanName = entry.getKey();
+				/**
+				 * 注入属性的类型
+				 */
 				instanceCandidate = entry.getValue();
 			}
 
@@ -1362,6 +1370,14 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
 				autowiredBeanNames.add(autowiredBeanName);
 			}
 			if (instanceCandidate instanceof Class) {
+				/**
+				 * 如果需要代理,则取出来的是代理的
+				 * 本质就是去beanFactory里取出bean
+				 * 不存在就实例化,这里取的绝对是一个完整的bean
+				 * e.g 当前在实例 beanA 它需要注入一个属性beanB
+				 * 注入只有一次,如果这次注入的beanB是不完整的,那么后续
+				 * spring有没有办法再对beanB进行增强
+				 */
 				instanceCandidate = descriptor.resolveCandidate(autowiredBeanName, type, this);
 			}
 			Object result = instanceCandidate;
@@ -1376,6 +1392,13 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
 			}
 			return result;
 		} finally {
+			/**
+			 * 清除spring的当前进行代理的类标记
+			 * e.g beanA的属性beanB 和beanC都需要代理
+			 * 当前注册的是beanB的则里面标记的就时beanB
+			 * 如果不清空则下次注册beanC的时候可能出现问题
+			 * 因此无论是否exception都需要清除
+			 */
 			ConstructorResolver.setCurrentInjectionPoint(previousInjectionPoint);
 		}
 	}

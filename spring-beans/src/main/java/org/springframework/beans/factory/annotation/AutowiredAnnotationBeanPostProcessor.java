@@ -466,8 +466,17 @@ public class AutowiredAnnotationBeanPostProcessor extends InstantiationAwareBean
 
 	@Override
 	public PropertyValues postProcessProperties(PropertyValues pvs, Object bean, String beanName) {
+		/**
+		 * 查找被@Autowired标记的field和method
+		 * 在第四次调用beanPostProcessor的时候完成的处理
+		 * {@link org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory#applyMergedBeanDefinitionPostProcessors(RootBeanDefinition, Class, String)}
+		 */
 		InjectionMetadata metadata = findAutowiringMetadata(beanName, bean.getClass(), pvs);
 		try {
+			/**
+			 * 注入属性
+			 * {@link InjectionMetadata#inject(Object, String, PropertyValues)}
+			 */
 			metadata.inject(bean, beanName, pvs);
 		}
 		catch (BeanCreationException ex) {
@@ -700,16 +709,39 @@ public class AutowiredAnnotationBeanPostProcessor extends InstantiationAwareBean
 		protected void inject(Object bean, @Nullable String beanName, @Nullable PropertyValues pvs) throws Throwable {
 			Field field = (Field) this.member;
 			Object value;
+			/**
+			 * 当前注入的属性是否已经实例化并缓存了
+			 * 如果已经实例被缓存则直接取出来
+			 */
 			if (this.cached) {
 				value = resolvedCachedArgument(beanName, this.cachedFieldValue);
 			}
 			else {
+				/**
+				 * 封装为DependencyDescriptor
+				 *
+				 * 在解析@Resource的时候没有进行封装,为什么能够直接从CommonAnnotationBeanPostProcessor
+				 * 对象取出来? TODO 不懂
+				 */
 				DependencyDescriptor desc = new DependencyDescriptor(field, this.required);
+				/**
+				 * 设置当前这个属性需要被注入的类
+				 */
 				desc.setContainingClass(bean.getClass());
+				/**
+				 * 存放注入的beanName,其实就是当前被注入属性的beanName
+				 */
 				Set<String> autowiredBeanNames = new LinkedHashSet<>(1);
 				Assert.state(beanFactory != null, "No BeanFactory available");
+				/**
+				 * 取出类型转换器
+				 */
 				TypeConverter typeConverter = beanFactory.getTypeConverter();
 				try {
+					/**
+					 * 获取注入属性的bean
+					 * 是个完整的bean
+					 */
 					value = beanFactory.resolveDependency(desc, beanName, autowiredBeanNames, typeConverter);
 				}
 				catch (BeansException ex) {
@@ -719,6 +751,10 @@ public class AutowiredAnnotationBeanPostProcessor extends InstantiationAwareBean
 					if (!this.cached) {
 						if (value != null || this.required) {
 							this.cachedFieldValue = desc;
+							/**
+							 * 也是按照beanName从beanFactory里拿出来
+							 * 进行注入的
+							 */
 							registerDependentBeans(beanName, autowiredBeanNames);
 							if (autowiredBeanNames.size() == 1) {
 								String autowiredBeanName = autowiredBeanNames.iterator().next();

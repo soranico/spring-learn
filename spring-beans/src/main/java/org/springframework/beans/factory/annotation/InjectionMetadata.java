@@ -114,7 +114,8 @@ public class InjectionMetadata {
 				 * 当前实例A
 				 * 则 element 为 B
 				 * target , beanName 为 A
-				 * {@link InjectedElement#inject(Object, String, PropertyValues)}
+				 * 使用@Resource标记调用{@link InjectedElement#inject(Object, String, PropertyValues)}
+				 * 使用@Autowired标记调用{@link AutowiredAnnotationBeanPostProcessor.AutowiredFieldElement#inject(java.lang.Object, java.lang.String, org.springframework.beans.PropertyValues)}
 				 */
 				element.inject(target, beanName, pvs);
 			}

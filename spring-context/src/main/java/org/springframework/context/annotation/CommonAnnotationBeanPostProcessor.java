@@ -308,10 +308,21 @@ public class CommonAnnotationBeanPostProcessor extends InitDestroyAnnotationBean
 		return true;
 	}
 
+	/**
+	 * 完成属性填充，filed和method
+	 * 只解析@Resource的
+	 * @param pvs the property values that the factory is about to apply (never {@code null})
+	 * @param bean the bean instance created, but whose properties have not yet been set
+	 * @param beanName the name of the bean
+	 * @return
+	 */
 	@Override
 	public PropertyValues postProcessProperties(PropertyValues pvs, Object bean, String beanName) {
 		/**
 		 * 获取需要注入的属性
+		 * 第四次调用后置处理器的时候解析了@Resource的filed和method
+		 * {@link org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory#applyMergedBeanDefinitionPostProcessors(RootBeanDefinition, Class, String)}
+		 * 这里获取的只有@Resource标记的,那@Autowired的呢？
 		 */
 		InjectionMetadata metadata = findResourceMetadata(beanName, bean.getClass(), pvs);
 		try {
@@ -350,7 +361,7 @@ public class CommonAnnotationBeanPostProcessor extends InitDestroyAnnotationBean
 		 * 查询缓存
 		 */
 		InjectionMetadata metadata = this.injectionMetadataCache.get(cacheKey);
-		if (InjectionMetadata.needsRefresh(metadata, clazz)) {
+		if (InjectionMetadata.needsRefresh(metadata, clazz)) {// 缓存中没有，需要刷新需要注入的数据（属性和方法参数）
 			synchronized (this.injectionMetadataCache) {
 				metadata = this.injectionMetadataCache.get(cacheKey);
 				if (InjectionMetadata.needsRefresh(metadata, clazz)) {
@@ -374,12 +385,24 @@ public class CommonAnnotationBeanPostProcessor extends InitDestroyAnnotationBean
 	 * @return
 	 */
 	private InjectionMetadata buildResourceMetadata(final Class<?> clazz) {
+		/**
+		 * 当前实例化的bean需要注入的数据
+		 */
 		List<InjectionMetadata.InjectedElement> elements = new ArrayList<>();
 		Class<?> targetClass = clazz;
 
 		do {
+			/**
+			 * 当前实例化的bean需要注入的数据
+			 * spring在解析当前类后递归解析其父类
+			 */
 			final List<InjectionMetadata.InjectedElement> currElements = new ArrayList<>();
-
+			/**
+			 * 解析属性
+			 * 1.解析是否被@WebServiceRef标记 TODO 不懂
+			 * 2.解析是否被@EJB标记 TODO 不懂
+			 * 3.解析是否被@Rersouce标记 不能是static,否则抛出异常
+			 */
 			ReflectionUtils.doWithLocalFields(targetClass, field -> {
 				if (webServiceRefClass != null && field.isAnnotationPresent(webServiceRefClass)) {
 					if (Modifier.isStatic(field.getModifiers())) {
@@ -411,7 +434,11 @@ public class CommonAnnotationBeanPostProcessor extends InitDestroyAnnotationBean
 					}
 				}
 			});
-
+			/**
+			 * 解析方法参数
+			 * 1和2的注解同上
+			 * 3.解析@Resource 方法不能是static并且参数只能为1
+			 */
 			ReflectionUtils.doWithLocalMethods(targetClass, method -> {
 				Method bridgedMethod = BridgeMethodResolver.findBridgedMethod(method);
 				if (!BridgeMethodResolver.isVisibilityBridgeMethodPair(method, bridgedMethod)) {
@@ -584,6 +611,10 @@ public class CommonAnnotationBeanPostProcessor extends InitDestroyAnnotationBean
 			autowiredBeanNames = Collections.singleton(name);
 		}
 
+		/**
+		 * 根据beanName从beanFactory里取出bean
+		 * 然后进行注入
+		 */
 		if (factory instanceof ConfigurableBeanFactory) {
 			ConfigurableBeanFactory beanFactory = (ConfigurableBeanFactory) factory;
 			for (String autowiredBeanName : autowiredBeanNames) {

@@ -409,11 +409,19 @@ public class DefaultSingletonBeanRegistry extends SimpleAliasRegistry implements
 	 * Register a dependent bean for the given bean,
 	 * to be destroyed before the given bean is destroyed.
 	 * @param beanName the name of the bean
-	 * @param dependentBeanName the name of the dependent bean
+	 * @param dependentBeanName the   name of the dependent bean
 	 */
 	public void registerDependentBean(String beanName, String dependentBeanName) {
 		String canonicalName = canonicalName(beanName);
-
+		/**
+		 *
+		 * 存放的是当前bean被依赖被依赖的所有bean
+		 * e.g
+		 * beanA依赖beanB和beanC ,而beanB依赖beanA
+		 * 则有
+		 * beanA - beanB
+		 * beanC -beanA
+		 */
 		synchronized (this.dependentBeanMap) {
 			Set<String> dependentBeans =
 					this.dependentBeanMap.computeIfAbsent(canonicalName, k -> new LinkedHashSet<>(8));

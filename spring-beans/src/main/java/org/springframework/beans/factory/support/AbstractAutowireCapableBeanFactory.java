@@ -1125,19 +1125,20 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 		 *
 		 * 实现MergedBeanDefinitionPostProcessor , 调用postProcessMergedBeanDefinition
 		 *
-		 * CommonAnnotationBeanPostProcessor 间接实现
+		 * 1.CommonAnnotationBeanPostProcessor 间接实现
 		 * 调用父类InitDestroyAnnotationBeanPostProcessor#postProcessMergedBeanDefinition来注册回调方法到
 		 * 当前解析的BeanDefinition，只是解析注册，没有执行，在自己的postProcessMergedBeanDefinition中解析
 		 * 注册@Resource标记的field和method，这说明@Resource执行的比@Autowired早
 		 *
-		 * AutowiredAnnotationBeanPostProcessor 实现
+		 *
+		 * 2.AutowiredAnnotationBeanPostProcessor 实现
 		 * 调用findAutowiringMetadata()封装被@AutoWired标记的field和method
 		 * 然后调用checkConfigMembers()注册到BeanDefinition
 		 *
 		 * 这里可以看出@Resource和@AutoWired的不同，@Resource标记的方法，必须有一个参数，否则会抛出异常，而@AutoWired没有这个限制
 		 *
 		 *
-		 * ApplicationListenerDetector 实现
+		 * 3.ApplicationListenerDetector 实现
 		 * 往singletonNames（Map） put当前beanName,isSingleton
 		 *
 		 */
@@ -1619,14 +1620,36 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 			 *
 			 * 执行InstantiationAwareBeanPostProcessor#postProcessProperties()
 			 *
+			 * 属性注入被两个类（1和2）解析
+			 * 这在第四次调用beanPostProcessor的时候就有体现了
+			 * 第四次在解析bean的属性的时候
+			 * 这两个类分别解析了@Resource和@Autowired
+			 * 所以之前的属性没有注入是条件没有看对,忽略
+			 * {@link #applyMergedBeanDefinitionPostProcessors(RootBeanDefinition, Class, String)}
+			 *
+			 * e.g
+			 * 当前正在为beanA填充属性,beanA有属性beanB等,则beanB注入的时候一定一定一定是个完整的bean
+			 * 原因很简单,当前正在创建beanA,如果此时给beanA一个不完整的beanB,那么后续beanB修改了（被代理）
+			 * beanA是没有办法感知的,这会造成两个属性值根本不一样
+			 *
+			 *
 			 * 1.CommonAnnotationBeanPostProcessor
-			 * {@link org.springframework.context.annotation.CommonAnnotationBeanPostProcessor#postProcessProperties(org.springframework.beans.PropertyValues, java.lang.Object, java.lang.String)#}
-			 * 完成值注入
+			 * {@link org.springframework.context.annotation.CommonAnnotationBeanPostProcessor#postProcessProperties(org.springframework.beans.PropertyValues, java.lang.Object, java.lang.String)}
+			 * 注入field和method （static修饰会抛出异常）
+			 * method的时候必须有且仅有一个参数,否则一样会抛出异常
+			 *
+			 * answer：@Resource按照beanName注入的原因
+			 *
+			 * 在将需要注入的beanB实例化后,放入beanFactory,然后按照返回beanName
+			 * 在注入的时候根据beanName从beanFactory里拿出来,多个的话注入最后一个
+			 * {@link org.springframework.context.annotation.CommonAnnotationBeanPostProcessor#autowireResource(org.springframework.beans.factory.BeanFactory, org.springframework.context.annotation.CommonAnnotationBeanPostProcessor.LookupElement, java.lang.String)}
 			 *
 			 *
 			 *
+			 * TODO 注意 只解析@Resource的 这一步执行完成后被@Resource标记的filed和method将完成注入
 			 *
-			 * 2.AutowiredAnnotationBeanPostProcessor 间接实现 什么都没有做
+			 * 2.AutowiredAnnotationBeanPostProcessor 间接实现
+			 * 完成@Autowired的注入
 			 *
 			 *
 			 *
