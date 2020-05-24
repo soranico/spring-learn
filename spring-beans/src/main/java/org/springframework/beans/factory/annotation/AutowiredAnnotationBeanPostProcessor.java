@@ -753,9 +753,12 @@ public class AutowiredAnnotationBeanPostProcessor extends InstantiationAwareBean
 							this.cachedFieldValue = desc;
 							/**
 							 * 也是按照beanName从beanFactory里拿出来
-							 * 进行注入的
+							 * 进行注册
 							 */
 							registerDependentBeans(beanName, autowiredBeanNames);
+							/**
+							 * 只有一个匹配，设置默认值
+							 */
 							if (autowiredBeanNames.size() == 1) {
 								String autowiredBeanName = autowiredBeanNames.iterator().next();
 								if (beanFactory.containsBean(autowiredBeanName) &&
@@ -772,6 +775,9 @@ public class AutowiredAnnotationBeanPostProcessor extends InstantiationAwareBean
 					}
 				}
 			}
+			/**
+			 * 反射赋值
+			 */
 			if (value != null) {
 				ReflectionUtils.makeAccessible(field);
 				field.set(bean, value);

@@ -234,7 +234,7 @@ public abstract class AbstractAutoProxyCreator extends ProxyProcessorSupport
 		 */
 		Object cacheKey = getCacheKey(bean.getClass(), beanName);
 		/**
-		 * 向早期代理引用中earlyProxyReferences(Map)存放此未完全实例化的bean
+		 * 向早期代理引用中earlyProxyReferences(Map)存放此未完全实例化的bean，这里存放标志当前类是循环引用的类,同时标记在循环引用的情况下，第八次调用后置处理器不需要再次代理了
 		 */
 		this.earlyProxyReferences.put(cacheKey, bean);
 		/**
@@ -314,6 +314,15 @@ public abstract class AbstractAutoProxyCreator extends ProxyProcessorSupport
 	}
 
 	/**
+	 *
+	 * TODO
+	 * 如果此bean没有被其他地方依赖则在此处完成代理
+	 * 否则代理是在这里完成的
+	 * 第八次调用后置处理器
+	 * 完成代理
+	 * 此时init方法已经执行完成
+	 *
+	 *
 	 * Create a proxy with the configured interceptors if the bean is
 	 * identified as one to proxy by the subclass.
 	 * @see #getAdvicesAndAdvisorsForBean
@@ -322,6 +331,10 @@ public abstract class AbstractAutoProxyCreator extends ProxyProcessorSupport
 	public Object postProcessAfterInitialization(@Nullable Object bean, String beanName) {
 		if (bean != null) {
 			Object cacheKey = getCacheKey(bean.getClass(), beanName);
+			/**
+			 * 注意,非循环依赖的情况下，这里都会完成代理的,只有一种情况下这里不会再次代理
+			 * beanA和beanB循环依赖，先创建beanA,在填充beanB时创建beanB,创建beanB时填充beanA,会执行beanA在singletonFactories里的方法标记已经代理，简单点就是循环依赖，先创建的这里不会再次执行代理
+			 */
 			if (this.earlyProxyReferences.remove(cacheKey) != bean) {
 				return wrapIfNecessary(bean, beanName, cacheKey);
 			}
@@ -363,6 +376,8 @@ public abstract class AbstractAutoProxyCreator extends ProxyProcessorSupport
 	}
 
 	/**
+	 * 如果当前bean需要代理,则进行代理
+	 * 注意:此时的bean已经是个完整的bean了，属性也都已经填充完成
 	 * Wrap the given bean if necessary, i.e. if it is eligible for being proxied.
 	 * @param bean the raw bean instance
 	 * @param beanName the name of the bean

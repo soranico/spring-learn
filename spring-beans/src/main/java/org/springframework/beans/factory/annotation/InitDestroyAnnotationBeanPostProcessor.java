@@ -130,10 +130,28 @@ public class InitDestroyAnnotationBeanPostProcessor
 		metadata.checkConfigMembers(beanDefinition);
 	}
 
+	/**
+	 * 执行生命周期回调方法
+	 * 注意在执行之前bean还没有被代理
+	 * @param bean the new bean instance
+	 * @param beanName the name of the bean
+	 * @return
+	 * @throws BeansException
+	 */
 	@Override
 	public Object postProcessBeforeInitialization(Object bean, String beanName) throws BeansException {
+		/**
+		 * 取出回调方法
+		 * 这一步可以直接从缓存中取出来
+		 * 因为在第四次调用后置处理器的时候已经解析完成放到了缓存中
+		 * {@link org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory#applyMergedBeanDefinitionPostProcessors(RootBeanDefinition, Class, String)}
+		 */
 		LifecycleMetadata metadata = findLifecycleMetadata(bean.getClass());
 		try {
+			/**
+			 * 执行回调方法
+			 * 只执行init方法,不执行销毁方法
+			 */
 			metadata.invokeInitMethods(bean, beanName);
 		}
 		catch (InvocationTargetException ex) {
@@ -343,14 +361,25 @@ public class InitDestroyAnnotationBeanPostProcessor
 		}
 
 		public void invokeInitMethods(Object target, String beanName) throws Throwable {
+			/**
+			 * 取出init方法
+			 */
 			Collection<LifecycleElement> checkedInitMethods = this.checkedInitMethods;
 			Collection<LifecycleElement> initMethodsToIterate =
 					(checkedInitMethods != null ? checkedInitMethods : this.initMethods);
 			if (!initMethodsToIterate.isEmpty()) {
+				/**
+				 * 执行init方法
+				 */
 				for (LifecycleElement element : initMethodsToIterate) {
 					if (logger.isTraceEnabled()) {
 						logger.trace("Invoking init method on bean '" + beanName + "': " + element.getMethod());
 					}
+					/**
+					 * 反射执行init方法
+					 * target就是当前对象
+					 * 反射基本知识
+					 */
 					element.invoke(target);
 				}
 			}

@@ -1254,6 +1254,15 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
 		}
 	}
 
+	/**
+	 * 获取注入的属性bean,获取的是个完整的bean
+	 * @param descriptor
+	 * @param beanName
+	 * @param autowiredBeanNames
+	 * @param typeConverter
+	 * @return
+	 * @throws BeansException
+	 */
 	@Nullable
 	public Object doResolveDependency(DependencyDescriptor descriptor, @Nullable String beanName,
 									  @Nullable Set<String> autowiredBeanNames, @Nullable TypeConverter typeConverter) throws BeansException {
@@ -1377,6 +1386,35 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
 				 * e.g 当前在实例 beanA 它需要注入一个属性beanB
 				 * 注入只有一次,如果这次注入的beanB是不完整的,那么后续
 				 * spring有没有办法再对beanB进行增强
+				 *
+				 * TODO 注意
+				 * 循环引用
+				 * beanA依赖beanB,beanB依赖beanA
+				 * 1.beanA注入属性beanB,去beanFactory里取beanB发现beanB没有创建
+				 *  则去创建beanB,beanB创建后,填充beanA也来到了这里,去beanFactory里取beanA
+				 *  发现beanA正在创建中,于是从创建beanA的工厂中取出beanA(需要代理则是代理)
+				 *  {@link #getSingleton(String, boolean)} boolean=true,又因为beanA已经被标记正在创建
+				 *  所有可以取出来一个早期非完整的beanA(没有填充beanB属性,因为beanB还在创建)并放到earlySingletonObjects中
+				 *
+				 *  1.为什么需要放到earlySingletonObjects里面
+				 *    因为循环引用那么在第八次调用后置处理器的时候不会再对最先创建的beanA进行代理,如果不保存beanA的代理,
+				 *    那么beanA将没有办法进行代理，从而导致beanB注入的属性beanA不正确
+				 *
+				 *  2.三个map的作用
+				 *    singleTonObjects:保存单例,但是spring的单例并非都在这里面,需要进行依赖替换的四个接口就不在这里面
+				 *                     mybatis存放的也是FactoryBean,实际的代理Mapper也不在
+				 *
+				 *    earlySingletonObjects:存放的是一个非完全bean(代理的话是已经完成代理的),这个东西只有在循环依赖并且是首先创建那个bean
+				 *                         的时候才会放进去,因为非循环依赖 | 循环依赖后创建的bean 实现代理的地方不再这里,它会随着bean的生命
+				 *                         周期执行完而自动变成一个完全bean
+				 *
+				 *    singletonFactories:默认spring是会放里面的,spring并不知道需不需要进行循环依赖,spring的策略是循环依赖的话首先创建的bean
+				 *                      代理就由这个Factory来完成,后续的第八次后置处理器不会再进行处理.因此如果这一步不存的话,需要代理的情况下
+				 *                      则bean就不会是代理的。循环依赖的时候先创建的bean会拿出来用,其他直接删除了不会执行里面的创建工厂.
+				 *
+				 * 注意:对于循环依赖首先创建的那个bean而言，多执行了一次后置处理器，这次执行完成了首先创建bean的代理，后创建bean的代理在第八次调用后置
+				 * 处理器
+				 *
 				 */
 				instanceCandidate = descriptor.resolveCandidate(autowiredBeanName, type, this);
 			}

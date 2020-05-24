@@ -19,6 +19,7 @@ package org.springframework.beans.factory.support;
 import org.apache.commons.logging.Log;
 import org.springframework.beans.*;
 import org.springframework.beans.factory.*;
+import org.springframework.beans.factory.annotation.InitDestroyAnnotationBeanPostProcessor;
 import org.springframework.beans.factory.config.*;
 import org.springframework.core.*;
 import org.springframework.lang.Nullable;
@@ -378,11 +379,56 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 		return initializeBean(beanName, existingBean, null);
 	}
 
+	/**
+	 * 第七次执行后置处理器
+	 * 主要为实现Aware接口的赋值
+	 * 和执行回调方法（init方法）
+	 * @param existingBean the existing bean instance
+	 * @param beanName the name of the bean, to be passed to it if necessary
+	 * (only passed to {@link BeanPostProcessor BeanPostProcessors};
+	 * can follow the {@link #ORIGINAL_INSTANCE_SUFFIX} convention in order to
+	 * enforce the given instance to be returned, i.e. no proxies etc)
+	 * @return
+	 * @throws BeansException
+	 */
 	@Override
 	public Object applyBeanPostProcessorsBeforeInitialization(Object existingBean, String beanName)
 			throws BeansException {
 
 		Object result = existingBean;
+		/**
+		 * TODO 第七次调用后置处理器
+		 * 所有后置处理器都会执行
+		 * 1.ApplicationContextAwareProcessor
+		 * 执行一些继承Aware子接口的类的方法
+		 * e.g 继承ApplicationContextAware
+		 * 会在此步调用setApplicationContext()
+		 *
+		 * 2.ImportAwareBeanPostProcessor
+		 * TODO 不懂 继承ImportAware接口
+		 *
+		 * 3.BeanPostProcessorChecker
+		 * 什么都没有做
+		 * 4.AnnotationAwareAspectJAutoProxyCreator
+		 * 什么都没有做 没有完成代理
+		 *
+		 * 5.CommonAnnotationBeanPostProcessor
+		 * 调用父类{@link InitDestroyAnnotationBeanPostProcessor#postProcessBeforeInitialization(java.lang.Object, java.lang.String)}
+		 * 执行生命周期回调方法,不执行销毁方法
+		 *
+		 * 这一步可以从缓冲中取出来，因为在第四次调用后置处理的时候已经将回调方法解析放到了缓存中
+		 * {@link #applyMergedBeanDefinitionPostProcessors(RootBeanDefinition, Class, String)}
+		 *
+		 *
+		 * 6.AutowiredAnnotationBeanPostProcessor
+		 * 什么都不做
+		 *
+		 * 7.ApplicationListenerDetector
+		 * 什么都不做
+		 *
+		 *
+		 *
+		 */
 		for (BeanPostProcessor processor : getBeanPostProcessors()) {
 			Object current = processor.postProcessBeforeInitialization(result, beanName);
 			if (current == null) {
@@ -393,11 +439,53 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 		return result;
 	}
 
+	/**
+	 * 第八次执行后置处理器
+	 * @param existingBean the existing bean instance
+	 * @param beanName the name of the bean, to be passed to it if necessary
+	 * (only passed to {@link BeanPostProcessor BeanPostProcessors};
+	 * can follow the {@link #ORIGINAL_INSTANCE_SUFFIX} convention in order to
+	 * enforce the given instance to be returned, i.e. no proxies etc)
+	 * @return
+	 * @throws BeansException
+	 */
 	@Override
 	public Object applyBeanPostProcessorsAfterInitialization(Object existingBean, String beanName)
 			throws BeansException {
 
 		Object result = existingBean;
+		/**
+		 *
+		 * TODO 第八次调用后置处理器
+		 *
+		 * 1.ApplicationContextAwareProcessor
+		 * 什么都没有做
+		 *
+		 * 2.ImportAwareBeanPostProcessor
+		 * 什么都没有做
+		 *
+		 *
+		 * 3.BeanPostProcessorChecker
+		 * 做了个日志记录, TODO test
+		 *
+		 * 4.AnnotationAwareAspectJAutoProxyCreator
+		 * TODO 注意 这里进行代理有两种情况
+		 * 1.此bean没有被其他bean依赖完成代理, 注意代理是在最后进行的，
+		 * 即属性填充完毕(如果填充的属性需要代理,则填充的是代理的),代理是在生命回调init方法之后,在destroy方法之前
+		 * 2.循环依赖,beanA依赖beanB,beanB依赖beanA,先实例beanA填充beanB,发现beanB没有创建,实例beanB填充beanA,则会调用singletonFactories里存放的beanA的实例化工厂
+		 * 标记beanA已经代理,然后放到earlySingletonObjects中,至此beanB填充完成，开始执行beanB的回调方法，然后执行到这里，由于beanB的工厂没有调用，没有被标记，所以会进行代理
+		 * 5.CommonAnnotationBeanPostProcessor
+		 * 什么都没有做
+		 *
+		 * 6.AutowiredAnnotationBeanPostProcessor
+		 * 什么都没有做
+		 *
+		 * 7.ApplicationListenerDetector
+		 *
+		 *
+		 *
+		 *
+		 */
 		for (BeanPostProcessor processor : getBeanPostProcessors()) {
 			Object current = processor.postProcessAfterInitialization(result, beanName);
 			if (current == null) {
@@ -597,6 +685,10 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 			 * 添加bean的实例工厂
 			 * 在创建bean的时候使用{@link DefaultSingletonBeanRegistry#addSingletonFactory(String, ObjectFactory)}
 			 *
+			 * TODO  注意
+			 * 这个工厂会在循环引用的情况下调用
+			 * 非循环引用不会调用
+			 *
 			 */
 			addSingletonFactory(beanName, () -> getEarlyBeanReference(beanName, mbd, bean));
 		}
@@ -608,6 +700,14 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 			 * 填充bean的属性
 			 */
 			populateBean(beanName, mbd, instanceWrapper);
+			/**
+			 * 1.执行实现Aware的方法,设置beanFactory
+			 * 2.第七次调用后置处理器,执行init方法
+			 * 3.执行实现InitializingBean的回调方法
+			 * 4.第八次调用后置处理器,完成代理,如果循环依赖首先创建的bean不会在这里代理
+			 *   是第八次,循环依赖的话，在注入属性的时候调用了一次
+			 *
+			 */
 			exposedObject = initializeBean(beanName, exposedObject, mbd);
 		} catch (Throwable ex) {
 			if (ex instanceof BeanCreationException && beanName.equals(((BeanCreationException) ex).getBeanName())) {
@@ -619,9 +719,18 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 		}
 
 		if (earlySingletonExposure) {
-			Object earlySingletonReference = getSingleton(beanName, false);
+			/**
+			 * 首先注入属性是给木代理的类注入的属性
+			 * 但注入的属性如果需要代理是肯定是代理的,因为注入的属性肯定已经走过了bean的生命流程
+			 * 此时获取的有值,只有在循环依赖首先创建的bean,代理包裹的了之前的非代理的属性，所以完全
+			 * 可以使用这个代理类来替换
+			 */
+			Object earlySingletonReference = getSingleton(beanName, false);// 这里取出的是早期创建的，代理的话是代理的
 			if (earlySingletonReference != null) {
 				if (exposedObject == bean) {
+					/**
+					 * 替换为早期引用,不替换的话循环引用时,会导致循环依赖不是同一个对象
+					 */
 					exposedObject = earlySingletonReference;
 				} else if (!this.allowRawInjectionDespiteWrapping && hasDependentBean(beanName)) {
 					String[] dependentBeans = getDependentBeans(beanName);
@@ -646,6 +755,9 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 
 		// Register bean as disposable.
 		try {
+			/**
+			 * 注册destroy方法
+			 */
 			registerDisposableBeanIfNecessary(beanName, bean, mbd);
 		} catch (BeanDefinitionValidationException ex) {
 			throw new BeanCreationException(
@@ -967,9 +1079,9 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 		if (!mbd.isSynthetic() && hasInstantiationAwareBeanPostProcessors()) {
 			/**
 			 *
-			 * TODO 调用后置处理器
+			 * TODO 循环引用下第七次调用后置处理器，完成循环引用类的代理
 			 *
-			 * 第x次调用后置处理器，实现SmartInstantiationAwareBeanPostProcessor#getEarlyBeanReference()
+			 * 第七次调用后置处理器，实现SmartInstantiationAwareBeanPostProcessor#getEarlyBeanReference()
 			 *
 			 * 1.AutowiredAnnotationBeanPostProcessor 间接实现 什么没有做
 			 *
@@ -1126,12 +1238,15 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 		 * 实现MergedBeanDefinitionPostProcessor , 调用postProcessMergedBeanDefinition
 		 *
 		 * 1.CommonAnnotationBeanPostProcessor 间接实现
+		 *
 		 * 调用父类InitDestroyAnnotationBeanPostProcessor#postProcessMergedBeanDefinition来注册回调方法到
-		 * 当前解析的BeanDefinition，只是解析注册，没有执行，在自己的postProcessMergedBeanDefinition中解析
-		 * 注册@Resource标记的field和method，这说明@Resource执行的比@Autowired早
+		 * 当前解析的BeanDefinition，只是解析注册，没有执行
+		 *
+		 * 在自己的postProcessMergedBeanDefinition中解析注册@Resource标记的field和method，这说明@Resource执行的比@Autowired早
 		 *
 		 *
 		 * 2.AutowiredAnnotationBeanPostProcessor 实现
+		 * 
 		 * 调用findAutowiringMetadata()封装被@AutoWired标记的field和method
 		 * 然后调用checkConfigMembers()注册到BeanDefinition
 		 *
@@ -1167,7 +1282,7 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 				Class<?> targetType = determineTargetType(beanName, mbd);
 				if (targetType != null) {
 					/**
-					 * TODO 第二次调用后置处理器
+					 * TODO 第一次调用后置处理器
 					 *
 					 * 调用BeanPostProcessor继承InstantiationAwareBeanPostProcessor
 					 * 1.AutowiredAnnotationBeanPostProcessor
@@ -1644,14 +1759,12 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 			 * 在注入的时候根据beanName从beanFactory里拿出来,多个的话注入最后一个
 			 * {@link org.springframework.context.annotation.CommonAnnotationBeanPostProcessor#autowireResource(org.springframework.beans.factory.BeanFactory, org.springframework.context.annotation.CommonAnnotationBeanPostProcessor.LookupElement, java.lang.String)}
 			 *
-			 *
-			 *
 			 * TODO 注意 只解析@Resource的 这一步执行完成后被@Resource标记的filed和method将完成注入
 			 *
 			 * 2.AutowiredAnnotationBeanPostProcessor 间接实现
-			 * 完成@Autowired的注入
+			 * 完成@Autowired的注入,需要注意的是
 			 *
-			 *
+			 * TODO 注意 直解析@AutoWired的
 			 *
 			 *
 			 *
@@ -1664,10 +1777,6 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 			 *
 			 *
 			 * 4.AnnotationAwareAspectJAutoProxyCreator 间接实现 什么都没有做
-			 *
-			 *
-			 *
-			 *
 			 *
 			 *
 			 */
@@ -1688,13 +1797,22 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 				}
 			}
 		}
-		if (needsDepCheck) {
+		/**
+		 * 是否需要依赖检查
+		 * 什么情况下需要
+		 * TODO 测试
+		 */
+		if (needsDepCheck) {//
 			if (filteredPds == null) {
 				filteredPds = filterPropertyDescriptorsForDependencyCheck(bw, mbd.allowCaching);
 			}
 			checkDependencies(beanName, mbd, filteredPds, pvs);
 		}
-
+		/**
+		 * 是否有手动注入的属性值
+		 * 什么情况下有，mybatis的那种吗？
+		 * TODO 测试
+		 */
 		if (pvs != null) {
 			applyPropertyValues(beanName, mbd, bw, pvs);
 		}
@@ -2027,15 +2145,34 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 				return null;
 			}, getAccessControlContext());
 		} else {
+			/**
+			 * 执行实现Aware的方法
+			 * 1.实现BeanNameAware
+			 * 2.BeanClassLoaderAware
+			 * 3.实现BeanFactoryAware，调用setFactory()将当前Factory赋值
+			 */
 			invokeAwareMethods(beanName, bean);
 		}
 
 		Object wrappedBean = bean;
 		if (mbd == null || !mbd.isSynthetic()) {
+			/**
+			 * TODO 第七次调用后置处理器
+			 * {@link #applyBeanPostProcessorsBeforeInitialization(Object, String)}
+			 * 只要完成Aware接口的赋值和生命周期方法的执行
+			 * 本次只执行init方法
+			 */
 			wrappedBean = applyBeanPostProcessorsBeforeInitialization(wrappedBean, beanName);
 		}
 
 		try {
+			/**
+			 * 执行实现InitializingBean接口的回调方法
+			 * 执行afterPropertiesSet
+			 *
+			 * 由此可见生命周期方法，使用@PostConstruct标记的
+			 * 比实现InitializingBean的早
+			 */
 			invokeInitMethods(beanName, wrappedBean, mbd);
 		} catch (Throwable ex) {
 			throw new BeanCreationException(
@@ -2043,6 +2180,14 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 					beanName, "Invocation of init method failed", ex);
 		}
 		if (mbd == null || !mbd.isSynthetic()) {
+			/**
+			 *
+			 * TODO 第八次调用后置处理器
+			 * 所有后置处理器都会执行
+			 * 完成代理,有种特殊情况不会在这里代理
+			 * 即循环依赖,首先创建的bean,那个bean已经完成了代理
+			 *
+			 */
 			wrappedBean = applyBeanPostProcessorsAfterInitialization(wrappedBean, beanName);
 		}
 

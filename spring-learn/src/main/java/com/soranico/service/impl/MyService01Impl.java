@@ -1,18 +1,13 @@
 package com.soranico.service.impl;
 
 import com.soranico.myannotation.MyAnnotation;
-import com.soranico.service.MyService;
 import com.soranico.service.MyService01;
-import com.soranico.service.MyServiceMap;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
-import javax.annotation.Resource;
-import java.util.List;
-import java.util.Map;
 
 /**
  * <pre>
@@ -33,16 +28,16 @@ import java.util.Map;
 public class MyService01Impl implements MyService01 {
 	@Autowired
 	private MyService02 myService02;
-
-	@Resource
-	private MyService myService;
-
-	@Autowired
-	private Map<String ,MyServiceMap> myServiceMap;
-	@Autowired
-	private List<MyServiceMap> myServiceMaps;
-	@Autowired
-	private MyServiceMap[] myServiceMapArray;
+//
+//	@Resource
+//	private MyService myService;
+//
+//	@Autowired
+//	private Map<String ,MyServiceMap> myServiceMap;
+//	@Autowired
+//	private List<MyServiceMap> myServiceMaps;
+//	@Autowired
+//	private MyServiceMap[] myServiceMapArray;
 
 	/**
 	 * 默认构造器
@@ -84,10 +79,10 @@ public class MyService01Impl implements MyService01 {
 		System.err.println("MyService01Impl destroy");
 	}
 
-	@Resource
-	private void test01(MyService02 defaultStr) {
-		System.err.println("MyService01Impl defaultStr = " + defaultStr);
-	}
+//	@Resource
+//	private void test01(MyService02 defaultStr) {
+//		System.err.println("MyService01Impl defaultStr = " + defaultStr);
+//	}
 
 	@MyAnnotation
 	public void service02() {

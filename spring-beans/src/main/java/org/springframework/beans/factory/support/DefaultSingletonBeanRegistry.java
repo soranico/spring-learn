@@ -185,15 +185,35 @@ public class DefaultSingletonBeanRegistry extends SimpleAliasRegistry implements
 		 *
 		 * 注意，一个bean首次进入这个方法时一定不满足上面的条件，因为首次
 		 * 还没有标记bean正在创建过程中
+		 *
+		 * TODO 循环引用第三次会调用到这里，会满足条件
 		 */
 		if (singletonObject == null && isSingletonCurrentlyInCreation(beanName)) {
 			synchronized (this.singletonObjects) {
+				/**
+				 * 循环依赖这里首次会获取为null
+				 * 再次调用会得到早期引用
+				 *
+				 * 非循环引用永远为null
+				 */
 				singletonObject = this.earlySingletonObjects.get(beanName);
 				if (singletonObject == null && allowEarlyReference) {
+					/**
+					 * 获取完成代理的工厂
+					 * 这个工厂是在创建bean后,还未进行属性填充之前创建的
+					 * {@link AbstractAutowireCapableBeanFactory#doCreateBean(String, RootBeanDefinition, Object[])}
+					 */
 					ObjectFactory<?> singletonFactory = this.singletonFactories.get(beanName);
 					if (singletonFactory != null) {
+						/**
+						 * 调用工厂获取bean
+						 * 如果需要代理,这一步是完成代理的
+						 */
 						singletonObject = singletonFactory.getObject();
 						this.earlySingletonObjects.put(beanName, singletonObject);
+						/**
+						 * 删除代理工厂
+						 */
 						this.singletonFactories.remove(beanName);
 					}
 				}
@@ -419,8 +439,10 @@ public class DefaultSingletonBeanRegistry extends SimpleAliasRegistry implements
 		 * e.g
 		 * beanA依赖beanB和beanC ,而beanB依赖beanA
 		 * 则有
-		 * beanA - beanB
-		 * beanC -beanA
+		 * beanA - (beanB)
+		 *
+		 * beanB - (beanA)
+		 * beanC - (beanA)
 		 */
 		synchronized (this.dependentBeanMap) {
 			Set<String> dependentBeans =
@@ -429,7 +451,13 @@ public class DefaultSingletonBeanRegistry extends SimpleAliasRegistry implements
 				return;
 			}
 		}
-
+		/**
+		 * 存放的是bean依赖的所有bean
+		 * e.g
+		 * beanA依赖beanB和beanC ,而beanB依赖beanA
+		 * beanA - (beanB,beanC)
+		 * beanB - (beanA)
+		 */
 		synchronized (this.dependenciesForBeanMap) {
 			Set<String> dependenciesForBean =
 					this.dependenciesForBeanMap.computeIfAbsent(dependentBeanName, k -> new LinkedHashSet<>(8));

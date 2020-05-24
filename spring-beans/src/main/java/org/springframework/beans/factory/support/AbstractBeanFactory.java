@@ -245,6 +245,11 @@ public abstract class AbstractBeanFactory extends FactoryBeanRegistrySupport imp
 		 * 因为在applicationContext.getBean()的时候，如果需要的
 		 * bean不是懒加载的，则这步可以直接获取，如果是懒加载的
 		 * 则需要判断后进行实例化
+		 *
+		 *
+		 * TODO 注意 循环依赖的时候 第一次创建beanA发现有beanB需要填充，去单例池获取beanB（第二次调用到这里）,发现beanB有beanA需要填充
+		 * TODO 则会去获取beanA此时会第三次调用到这里，此时必须允许早期引用，因为beanA已经被标记创建了，不需要再次创建
+		 *
 		 */
 		Object sharedInstance = getSingleton(beanName);
 		if (sharedInstance != null && args == null) {
@@ -508,11 +513,22 @@ public abstract class AbstractBeanFactory extends FactoryBeanRegistrySupport imp
 		}
 	}
 
+	/**
+	 * 判断beanName类型和typeToMatch是否是同一个类型
+	 * @param name the name of the bean to query
+	 * @param typeToMatch the type to match against (as a {@code ResolvableType})
+	 * @return
+	 * @throws NoSuchBeanDefinitionException
+	 */
 	@Override
 	public boolean isTypeMatch(String name, ResolvableType typeToMatch) throws NoSuchBeanDefinitionException {
 		String beanName = transformedBeanName(name);
 
 		// Check manually registered singletons.
+		/**
+		 * 先从单例池中取出beanName所对的类型
+		 * 不允许早期引用
+		 */
 		Object beanInstance = getSingleton(beanName, false);
 		if (beanInstance != null && beanInstance.getClass() != NullBean.class) {
 			if (beanInstance instanceof FactoryBean) {
@@ -562,7 +578,9 @@ public abstract class AbstractBeanFactory extends FactoryBeanRegistrySupport imp
 
 		// Retrieve corresponding bean definition.
 		RootBeanDefinition mbd = getMergedLocalBeanDefinition(beanName);
-
+		/**
+		 * 需要匹配的Class类型
+		 */
 		Class<?> classToMatch = typeToMatch.resolve();
 		if (classToMatch == null) {
 			classToMatch = FactoryBean.class;
@@ -580,7 +598,9 @@ public abstract class AbstractBeanFactory extends FactoryBeanRegistrySupport imp
 				return typeToMatch.isAssignableFrom(targetClass);
 			}
 		}
-
+		/**
+		 * 获取beanName所属的类型
+		 */
 		Class<?> beanType = predictBeanType(beanName, mbd, typesToMatch);
 		if (beanType == null) {
 			return false;

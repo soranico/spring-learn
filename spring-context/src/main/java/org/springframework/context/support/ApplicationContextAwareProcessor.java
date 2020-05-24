@@ -16,23 +16,17 @@
 
 package org.springframework.context.support;
 
-import java.security.AccessControlContext;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
-
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.Aware;
 import org.springframework.beans.factory.config.BeanPostProcessor;
 import org.springframework.beans.factory.config.EmbeddedValueResolver;
-import org.springframework.context.ApplicationContextAware;
-import org.springframework.context.ApplicationEventPublisherAware;
-import org.springframework.context.ConfigurableApplicationContext;
-import org.springframework.context.EmbeddedValueResolverAware;
-import org.springframework.context.EnvironmentAware;
-import org.springframework.context.MessageSourceAware;
-import org.springframework.context.ResourceLoaderAware;
+import org.springframework.context.*;
 import org.springframework.lang.Nullable;
 import org.springframework.util.StringValueResolver;
+
+import java.security.AccessControlContext;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 
 /**
  * {@link org.springframework.beans.factory.config.BeanPostProcessor}
@@ -78,14 +72,15 @@ class ApplicationContextAwareProcessor implements BeanPostProcessor {
 	@Nullable
 	public Object postProcessBeforeInitialization(final Object bean, String beanName) throws BeansException {
 		AccessControlContext acc = null;
-
+		/**
+		 * 开启系统安全
+		 */
 		if (System.getSecurityManager() != null &&
 				(bean instanceof EnvironmentAware || bean instanceof EmbeddedValueResolverAware ||
 						bean instanceof ResourceLoaderAware || bean instanceof ApplicationEventPublisherAware ||
 						bean instanceof MessageSourceAware || bean instanceof ApplicationContextAware)) {
 			acc = this.applicationContext.getBeanFactory().getAccessControlContext();
 		}
-
 		if (acc != null) {
 			AccessController.doPrivileged((PrivilegedAction<Object>) () -> {
 				invokeAwareInterfaces(bean);
@@ -93,6 +88,20 @@ class ApplicationContextAwareProcessor implements BeanPostProcessor {
 			}, acc);
 		}
 		else {
+			/**
+			 * 一般会执行这里
+			 * 主要就是为实现Aware的子接口的方法来赋值
+			 * 1.EnvironmentAware -> setEnvironment
+			 * 2.EmbeddedValueResolverAware -> setEmbeddedValueResolver
+			 * 3.ResourceLoaderAware -> setResourceLoader
+			 * 4.ApplicationEventPublisherAware -> setApplicationEventPublisher TODO
+			 * 5.MessageSourceAware -> setMessageSource
+			 * 6.ApplicationContextAware -> setApplicationContext
+			 *
+			 * 设置beanFactory的Aware会在这些之前执行
+			 * 在第七次调用后置处理器之前执行
+			 *
+			 */
 			invokeAwareInterfaces(bean);
 		}
 
