@@ -1,5 +1,6 @@
 package com.soranico.mybean;
 
+import com.soranico.service.MyService01;
 import org.springframework.beans.factory.annotation.Autowired;
 
 /**
@@ -19,10 +20,16 @@ import org.springframework.beans.factory.annotation.Autowired;
 public class MyCustomBean {
 	@Autowired
 	private MyBean myBean;
+	private MyService01 myService01;
 
 	public MyCustomBean(MyBean myBean) {
 		System.err.println("MyCustomBean");
 		this.myBean = myBean;
+	}
+
+	public MyCustomBean(MyService01 myBean) {
+		System.err.println("MyCustomBean");
+		this.myService01 = myBean;
 	}
 
 	public MyCustomBean() {

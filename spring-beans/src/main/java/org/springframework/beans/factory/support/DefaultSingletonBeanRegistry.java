@@ -279,8 +279,26 @@ public class DefaultSingletonBeanRegistry extends SimpleAliasRegistry implements
 					if (recordSuppressedExceptions) {
 						this.suppressedExceptions = null;
 					}
+					/**
+					 * 将beanName从singletonsCurrentlyInCreation(Set)
+					 * 中移除,此时bean已经创建完成了
+					 */
 					afterSingletonCreation(beanName);
 				}
+				/**
+				 * 是一个新的单例
+				 * 1.添加到singletonObjects(Map)
+				 *
+				 * 2.从singletonFactories(Map)中移除,这里并不一定会存在
+				 *   循环依赖的首先创建的bean已经移除过了{@link #getSingleton(String, boolean)}
+				 *   但其他bean一定会在,无论是否循环依赖spring都会往里面放,单不一定会执行
+				 *   {@link AbstractAutowireCapableBeanFactory#doCreateBean(String, RootBeanDefinition, Object[])}
+				 *
+				 * 3.从earlySingletonObjects(Map)中移除
+				 *   这里并不一定会存在,循环依赖的首先创建的bean里面,其余不在
+				 *
+				 * 4.向registeredSingletons(Set)添加当前beanName**
+				 */
 				if (newSingleton) {
 					addSingleton(beanName, singletonObject);
 				}

@@ -909,6 +909,7 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
 				} else {
 					/**
 					 * 不是factoryBean实例化普通bean
+					 * {@link #doGetBean(String, Class, Object[], boolean)}
 					 */
 					getBean(beanName);
 				}

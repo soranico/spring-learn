@@ -22,7 +22,7 @@ import org.springframework.context.annotation.*;
  */
 @Configuration
 @ComponentScan(basePackages = {
-		"com.soranico.service.**.**"
+		"com.soranico.service"
 })
 @EnableAspectJAutoProxy
 //@EnableTransactionManagement

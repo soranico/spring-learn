@@ -100,10 +100,6 @@ public class AnnotatedBeanDefinitionReader {
 		 */
 		this.registry = registry;
 		/**
-		 * 通过doRegisterBean()得知，此方法的作用是添加不要注册的类，不知是否正确？
-		 * {@link #doRegisterBean(Class, Supplier, String, Class[], BeanDefinitionCustomizer...)}
-		 * //TODO
-		 * 1.现在的理解，2019.12.21（待验证）
 		 * 初始化bean条件解析器，用于后序解析条件注册bean
 		 * {@link ConditionEvaluator#ConditionEvaluator(BeanDefinitionRegistry, Environment, ResourceLoader)}
 		 */

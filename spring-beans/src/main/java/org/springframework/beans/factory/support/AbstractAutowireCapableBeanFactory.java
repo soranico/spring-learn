@@ -757,6 +757,13 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 		try {
 			/**
 			 * 注册destroy方法
+			 * 实现的方式有三种
+			 * 1.实现DisposableBean | AutoCloseable 接口
+			 * 2.xml配置
+			 *
+			 * 3.使用@PreDestroy,会先判断当前后置处理器中有没有实现DestructionAwareBeanPostProcessor接口的
+			 *  CommonAnnotationBeanPostProcessor间接实现了,会从这里面找destroy方法,这个是在第四次调用后置
+			 *  处理器的时候解析的{@link #applyMergedBeanDefinitionPostProcessors(RootBeanDefinition, Class, String)}
 			 */
 			registerDisposableBeanIfNecessary(beanName, bean, mbd);
 		} catch (BeanDefinitionValidationException ex) {
@@ -1246,7 +1253,7 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 		 *
 		 *
 		 * 2.AutowiredAnnotationBeanPostProcessor 实现
-		 * 
+		 *
 		 * 调用findAutowiringMetadata()封装被@AutoWired标记的field和method
 		 * 然后调用checkConfigMembers()注册到BeanDefinition
 		 *
@@ -1372,7 +1379,7 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 		}
 		/**
 		 * 这个是解析@Bean的
-		 * 在ConfigurationClassBeanDefinitionReader#loadBeanDefinitions()
+		 * 在{@link org.springframework.context.annotation.ConfigurationClassBeanDefinitionReader#loadBeanDefinitions(Set)}
 		 * ->loadBeanDefinitionsForConfigurationClass()
 		 * ->loadBeanDefinitionsForBeanMethod()中创建
 		 * ConfigurationClassBeanDefinition时为调用setFactoryMethodName(methodName)
@@ -1591,7 +1598,10 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 	 */
 	protected BeanWrapper instantiateUsingFactoryMethod(
 			String beanName, RootBeanDefinition mbd, @Nullable Object[] explicitArgs) {
-
+		/**
+		 *
+		 * {@link ConstructorResolver#instantiateUsingFactoryMethod(String, RootBeanDefinition, Object[])}
+		 */
 		return new ConstructorResolver(this).instantiateUsingFactoryMethod(beanName, mbd, explicitArgs);
 	}
 
@@ -2186,7 +2196,7 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 			 * 所有后置处理器都会执行
 			 * 完成代理,有种特殊情况不会在这里代理
 			 * 即循环依赖,首先创建的bean,那个bean已经完成了代理
-			 *
+			 * 其余的bean需要代理的话会在这里进行代理
 			 */
 			wrappedBean = applyBeanPostProcessorsAfterInitialization(wrappedBean, beanName);
 		}

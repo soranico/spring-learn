@@ -268,6 +268,9 @@ class ConfigurationClassBeanDefinitionReader {
 		 */
 		else {
 			// instance @Bean method
+			/**
+			 * 设置配置类的beanName
+			 */
 			beanDef.setFactoryBeanName(configClass.getBeanName());
 			/**
 			 * 设置唯一方法，不会被重载
