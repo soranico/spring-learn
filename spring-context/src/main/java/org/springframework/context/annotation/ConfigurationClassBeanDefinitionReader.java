@@ -257,6 +257,9 @@ class ConfigurationClassBeanDefinitionReader {
 		 */
 		if (metadata.isStatic()) {
 			// static @Bean method
+			/**
+			 * 后续通过class来调用静态方法
+			 */
 			beanDef.setBeanClassName(configClass.getMetadata().getClassName());
 			/**
 			 * 静态方法，设置指定创建方法
@@ -269,11 +272,11 @@ class ConfigurationClassBeanDefinitionReader {
 		else {
 			// instance @Bean method
 			/**
-			 * 设置配置类的beanName
+			 * 设置配置类的beanName，后续获取实例反射执行
 			 */
 			beanDef.setFactoryBeanName(configClass.getBeanName());
 			/**
-			 * 设置唯一方法，不会被重载
+			 * 执行的方法
 			 */
 			beanDef.setUniqueFactoryMethodName(methodName);
 		}

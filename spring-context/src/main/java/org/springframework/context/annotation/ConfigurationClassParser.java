@@ -449,6 +449,9 @@ class ConfigurationClassParser {
 	 * Register member (nested) classes that happen to be configuration classes themselves.
 	 */
 	private void processMemberClasses(ConfigurationClass configClass, SourceClass sourceClass) throws IOException {
+		/**
+		 * 获取内部类
+		 */
 		Collection<SourceClass> memberClasses = sourceClass.getMemberClasses();
 		if (!memberClasses.isEmpty()) {
 			List<SourceClass> candidates = new ArrayList<>(memberClasses.size());
@@ -465,6 +468,9 @@ class ConfigurationClassParser {
 				} else {
 					this.importStack.push(configClass);
 					try {
+						/**
+						 * 完成内部类解析
+						 */
 						processConfigurationClass(candidate.asConfigClass(configClass));
 					} finally {
 						this.importStack.pop();

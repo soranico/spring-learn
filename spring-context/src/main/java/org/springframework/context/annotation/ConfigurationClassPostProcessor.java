@@ -260,7 +260,7 @@ public class ConfigurationClassPostProcessor implements BeanDefinitionRegistryPo
 		 */
 		enhanceConfigurationClasses(beanFactory);
 		/**
-		 * 添加BeanPostProcess
+		 * 添加BeanPostProcess 后续给代理配置类$$beanFactory赋值
 		 * ImportAwareBeanPostProcessor继承InstantiationAwareBeanPostProcessor 间接实现了PriorityOrdered
 		 */
 		beanFactory.addBeanPostProcessor(new ImportAwareBeanPostProcessor(beanFactory));
@@ -273,7 +273,7 @@ public class ConfigurationClassPostProcessor implements BeanDefinitionRegistryPo
 	public void processConfigBeanDefinitions(BeanDefinitionRegistry registry) {
 		List<BeanDefinitionHolder> configCandidates = new ArrayList<>();
 
-		/** 获取所有BeanDefinition的名字，即beanName */
+		/** 获取所有BeanDefinition的名字，这里面有之前注册配置类 后面主要就是解析这个配置类*/
 		String[] candidateNames = registry.getBeanDefinitionNames();
 
 		/** 根据beanName从工厂里面取出对应的BeanDefinition */
@@ -439,7 +439,7 @@ public class ConfigurationClassPostProcessor implements BeanDefinitionRegistryPo
 
 		/**
 		 * 手动注册一个单例对象
-		 * org.springframework.context.annotation.ConfigurationClassPostProcessor.importRegistry
+		 * {@link #org.springframework.context.annotation.ConfigurationClassPostProcessor.importRegistry}
 		 * TODO 不懂
 		 */
 		// Register the ImportRegistry as a bean in order to support ImportAware @Configuration classes

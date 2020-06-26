@@ -181,7 +181,7 @@ public abstract class AnnotationConfigUtils {
 		/**
 		 * BeanDefinitionHolder：类似于封装成为一个map，方便数据传递
 		 * 这里为什么要初始化大小8，因为Java默认大小是第一个大于我们指定大小的
-		 * 2的指数次幂，spring在后面注册了6个BeanDefinition，而8 > 6
+		 * 2的指数次幂，spring在后面注册了5个BeanDefinition，而8 > 5
 		 * 因此使用8可以避免java底层再次计算，提高性能
 		 * @see BeanDefinitionHolder
 		 */
@@ -229,7 +229,7 @@ public abstract class AnnotationConfigUtils {
 		/**
 		 * 不会注册
 		 */
-		// Check for JPA support, and if present add the PersistenceAnnotationBeanPostProcessor.//不会注册
+		// Check for JPA support, and if present add the PersistenceAnnotationBeanPostProcessor.
 		if (jpaPresent && !registry.containsBeanDefinition(PERSISTENCE_ANNOTATION_PROCESSOR_BEAN_NAME)) {
 			RootBeanDefinition def = new RootBeanDefinition();
 			try {
@@ -369,7 +369,7 @@ public abstract class AnnotationConfigUtils {
 			ScopeMetadata metadata, BeanDefinitionHolder definition, BeanDefinitionRegistry registry) {
 
 		/**
-		 * 获取代理模式
+		 * TODO 不懂
 		 */
 		ScopedProxyMode scopedProxyMode = metadata.getScopedProxyMode();
 		if (scopedProxyMode.equals(ScopedProxyMode.NO)) {

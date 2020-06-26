@@ -52,11 +52,11 @@ import java.util.function.Supplier;
 public class AnnotatedBeanDefinitionReader {
 
 	private final BeanDefinitionRegistry registry;
-
+	/** beanName生成器 */
 	private BeanNameGenerator beanNameGenerator = new AnnotationBeanNameGenerator();
-
+	/** scope解析器 */
 	private ScopeMetadataResolver scopeMetadataResolver = new AnnotationScopeMetadataResolver();
-
+	/** 条件解析器，在spring boot的自动装配加载类阶段大量使用 */
 	private ConditionEvaluator conditionEvaluator;
 
 
@@ -74,7 +74,8 @@ public class AnnotatedBeanDefinitionReader {
 	public AnnotatedBeanDefinitionReader(BeanDefinitionRegistry registry) {
 		/**
 		 * 调用对应的构造方法{@link #AnnotatedBeanDefinitionReader(BeanDefinitionRegistry, Environment)}
-		 * getOrCreateEnvironment()：获取或创建一个spring环境（创建默认为非web环境）
+		 * getOrCreateEnvironment()：获取或创建一个spring环境 它是根据我们使用的spring环境来的
+		 * e.g 使用AnnotationConfigApplicationContext就是标准环境。使用AnnotationConfigServletWebServerApplicationContext就是web环境
 		 * {@link #getOrCreateEnvironment(BeanDefinitionRegistry)}
 		 */
 		this(registry, getOrCreateEnvironment(registry));
@@ -95,12 +96,10 @@ public class AnnotatedBeanDefinitionReader {
 		Assert.notNull(environment, "Environment must not be null");
 		/**
 		 * 设置AnnotatedBeanDefinitionReader的环境为传递的环境
-		 * 暂时不知道为什么要在这里存储
-		 * TODO
 		 */
 		this.registry = registry;
 		/**
-		 * 初始化bean条件解析器，用于后序解析条件注册bean
+		 * 初始化bean条件解析器，用于后序解析条件注册bean，spring boot中使用了
 		 * {@link ConditionEvaluator#ConditionEvaluator(BeanDefinitionRegistry, Environment, ResourceLoader)}
 		 */
 		this.conditionEvaluator = new ConditionEvaluator(registry, environment, null);
@@ -277,10 +276,9 @@ public class AnnotatedBeanDefinitionReader {
 			return;
 		}
 		/**
-		 * 为bean的实例化作为生命回调
-		 * 替换默认的声明式工厂
-		 * 不知是否正确？
-		 * //TODO
+		 * 生成实例的方法
+		 * 指定的话，spring在创建对象的时候
+		 * 会首先使用这个方法
 		 */
 		abd.setInstanceSupplier(instanceSupplier);
 		/** 设置bean模式，singleton还是prototype */
@@ -319,8 +317,8 @@ public class AnnotatedBeanDefinitionReader {
 
 		BeanDefinitionHolder definitionHolder = new BeanDefinitionHolder(abd, beanName);
 		/**
-		 * 暂时不知道
-		 * TODO
+		 * TODO 不懂
+		 * 标记，和代理好像也没有关系
 		 */
 		definitionHolder = AnnotationConfigUtils.applyScopedProxyMode(scopeMetadata, definitionHolder, this.registry);
 		/**
