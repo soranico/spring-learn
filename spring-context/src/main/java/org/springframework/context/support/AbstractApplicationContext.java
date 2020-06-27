@@ -570,18 +570,39 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 				invokeBeanFactoryPostProcessors(beanFactory);
 
 				// Register bean processors that intercept bean creation.
+				/**
+				 * 注册bean后置处理器，因为上步已经完成了Class - > BeanDefinition的解析
+				 * 所以要在bean创建前注册后置处理器来在bean创建过程中执行一些操作
+				 */
 				registerBeanPostProcessors(beanFactory);
 
 				// Initialize message source for this context.
 				initMessageSource();
 
 				// Initialize event multicaster for this context.
+				/**
+				 * 初始化事件发布 spring boot中使用此特性在不同阶段完成了不同的操作
+				 *
+				 * 1.若已有name = applicationEventMulticaster的bean
+				 * 则取出bean赋值 this.applicationEventMulticaster
+				 * 2.若无 则实例SimpleApplicationEventMulticaster并赋值
+				 * 注册为bean
+				 */
 				initApplicationEventMulticaster();
 
 				// Initialize other special beans in specific context subclasses.
+				/**
+				 * spring boot的根据环境创建不同的server容器 tomcat jetty等就是
+				 * 通过此方法来完成的
+				 */
 				onRefresh();
 
 				// Check for listener beans and register them.
+				/**
+				 * 注册交给spring管理的Listener
+				 * 并且如果earlyApplicationEvents事件
+				 * 则发布事件
+				 */
 				registerListeners();
 
 				// Instantiate all remaining (non-lazy-init) singletons.
@@ -812,7 +833,7 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 	 */
 	protected void initMessageSource() {
 		ConfigurableListableBeanFactory beanFactory = getBeanFactory();
-		if (beanFactory.containsLocalBean(MESSAGE_SOURCE_BEAN_NAME)) {
+		if (beanFactory.containsLocalBean(MESSAGE_SOURCE_BEAN_NAME)) {/** 首先获取也没有messageSource spring默认没有 只能是用户指定了 */
 			this.messageSource = beanFactory.getBean(MESSAGE_SOURCE_BEAN_NAME, MessageSource.class);
 			// Make MessageSource aware of parent MessageSource.
 			if (this.parent != null && this.messageSource instanceof HierarchicalMessageSource) {
@@ -828,10 +849,10 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 			}
 		} else {
 			// Use empty MessageSource to be able to accept getMessage calls.
-			DelegatingMessageSource dms = new DelegatingMessageSource();
+			DelegatingMessageSource dms = new DelegatingMessageSource();/** 实例一个消息 */
 			dms.setParentMessageSource(getInternalParentMessageSource());
 			this.messageSource = dms;
-			beanFactory.registerSingleton(MESSAGE_SOURCE_BEAN_NAME, this.messageSource);
+			beanFactory.registerSingleton(MESSAGE_SOURCE_BEAN_NAME, this.messageSource);/** 注册消息 */
 			if (logger.isTraceEnabled()) {
 				logger.trace("No '" + MESSAGE_SOURCE_BEAN_NAME + "' bean, using [" + this.messageSource + "]");
 			}

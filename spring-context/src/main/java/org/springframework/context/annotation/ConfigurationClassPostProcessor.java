@@ -260,7 +260,7 @@ public class ConfigurationClassPostProcessor implements BeanDefinitionRegistryPo
 		 */
 		enhanceConfigurationClasses(beanFactory);
 		/**
-		 * 添加BeanPostProcess 后续给代理配置类$$beanFactory赋值
+		 * 添加BeanPostProcess 后续给代理配置类$$beanFactory赋值 没有经过bean过程
 		 * ImportAwareBeanPostProcessor继承InstantiationAwareBeanPostProcessor 间接实现了PriorityOrdered
 		 */
 		beanFactory.addBeanPostProcessor(new ImportAwareBeanPostProcessor(beanFactory));
