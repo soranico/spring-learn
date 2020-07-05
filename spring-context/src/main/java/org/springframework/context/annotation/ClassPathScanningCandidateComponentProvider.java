@@ -198,6 +198,12 @@ public class ClassPathScanningCandidateComponentProvider implements EnvironmentC
 		this.includeFilters.add(new AnnotationTypeFilter(Component.class));
 		ClassLoader cl = ClassPathScanningCandidateComponentProvider.class.getClassLoader();
 		try {
+			/**
+			 * 加载javax.annotation.ManagedBean如果存在则添加到过滤列表
+			 * 如果不存在则抛出异常不会放到List
+			 * forName()最终调用forName0()其中false代表不会执行静态代码块
+			 * 静态变量赋值操作，和ClassLoader加载一样
+			 */
 			this.includeFilters.add(new AnnotationTypeFilter(
 					((Class<? extends Annotation>) ClassUtils.forName("javax.annotation.ManagedBean", cl)), false));
 			logger.trace("JSR-250 'javax.annotation.ManagedBean' found and supported for component scanning");

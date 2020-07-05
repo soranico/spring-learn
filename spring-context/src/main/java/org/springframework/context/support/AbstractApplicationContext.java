@@ -129,6 +129,9 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 	static {
 		// Eagerly load the ContextClosedEvent class to avoid weird classloader issues
 		// on application shutdown in WebLogic 8.1. (Reported by Dustin Woods.)
+		/**
+		 * 先加载ContextClosedEvent
+		 */
 		ContextClosedEvent.class.getName();
 	}
 
@@ -548,7 +551,12 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 			ConfigurableListableBeanFactory beanFactory = obtainFreshBeanFactory();
 
 			// Prepare the bean factory for use in this context.
-			/** 准备bean工厂 */
+			/**
+			 * 准备bean工厂
+			 * 这里会添加两个BeanPostProcessor
+			 * 注意这里添加的没有经过bean的生命过程，也就是只是放到beanPostProcessors(List)中
+			 * 在
+			 */
 			prepareBeanFactory(beanFactory);
 
 			try {
@@ -654,6 +662,9 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 		}
 
 		// Initialize any placeholder property sources in the context environment.
+		/**
+		 * web环境中使用了
+		 */
 		initPropertySources();
 
 		// Validate that all properties marked as required are resolvable:
@@ -661,6 +672,24 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 		getEnvironment().validateRequiredProperties();
 
 		// Store pre-refresh ApplicationListeners...
+		/**
+		 * 用户手动添加的ApplicationListener
+		 *
+		 * 将ApplicationListener注册到spring有三种方式
+		 *
+		 * 1. spring boot放到META-INF/spring.factories中
+		 * org.springframework.context.ApplicationListener=xxx
+		 * spring boot在启动时会先去加载并创建实例
+		 *
+		 * 2.手动调用addApplicationListener()
+		 *
+		 * 3.交给spring管理 使用@EventListener标记
+		 *
+		 * 其中1和2的方式会提前执行，但不一定是在这里
+		 *
+		 * 3只有在spring完成扫描BeanDefinition后才会有
+		 *
+		 */
 		if (this.earlyApplicationListeners == null) {
 			this.earlyApplicationListeners = new LinkedHashSet<>(this.applicationListeners);
 		} else {

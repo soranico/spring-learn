@@ -279,6 +279,8 @@ public class AnnotatedBeanDefinitionReader {
 		 * 生成实例的方法
 		 * 指定的话，spring在创建对象的时候
 		 * 会首先使用这个方法
+		 *
+		 * Netty在获取执行策略的时候如果没有任务就是用这个方法来选择已到达的事件
 		 */
 		abd.setInstanceSupplier(instanceSupplier);
 		/** 设置bean模式，singleton还是prototype */
@@ -291,8 +293,10 @@ public class AnnotatedBeanDefinitionReader {
 		String beanName = (name != null ? name : this.beanNameGenerator.generateBeanName(abd, this.registry));
 		/**
 		 * 初始化bean的属性，判断bean是否加了下面的注解
-		 * 如果有下面的注解，则初始化对应属性
-		 * lazy，Primary，Role，Description
+		 * 如果有下面5个注解，则初始化对应属性
+		 * lazy，Primary，Role，Description DependsOn
+		 *
+		 * 基本所有BeanDefinition都会被这个方法处理一遍
 		 * {@link AnnotationConfigUtils#processCommonDefinitionAnnotations(AnnotatedBeanDefinition)}
 		 */
 		AnnotationConfigUtils.processCommonDefinitionAnnotations(abd);
